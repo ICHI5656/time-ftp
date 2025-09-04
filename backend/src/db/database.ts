@@ -37,6 +37,7 @@ export const initDatabase = async () => {
         target_directory TEXT NOT NULL,
         cron_expression TEXT NOT NULL,
         file_pattern TEXT DEFAULT '*.csv',
+        selected_files TEXT,
         is_active BOOLEAN DEFAULT 1,
         last_run DATETIME,
         next_run DATETIME,
@@ -45,6 +46,13 @@ export const initDatabase = async () => {
         FOREIGN KEY (ftp_connection_id) REFERENCES ftp_connections (id) ON DELETE CASCADE
       )
     `);
+    
+    // Add selected_files column if it doesn't exist (for migration)
+    try {
+      db.exec(`ALTER TABLE upload_schedules ADD COLUMN selected_files TEXT`);
+    } catch (error) {
+      // Column already exists, ignore
+    }
 
     // Create file queue table
     db.exec(`
@@ -147,8 +155,8 @@ export const getAllSchedules = () => {
 
 export const createSchedule = (data: any) => {
   const stmt = db.prepare(`
-    INSERT INTO upload_schedules (name, ftp_connection_id, source_directory, target_directory, cron_expression, file_pattern)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO upload_schedules (name, ftp_connection_id, source_directory, target_directory, cron_expression, file_pattern, selected_files)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
   const result = stmt.run(
     data.name,
@@ -156,7 +164,8 @@ export const createSchedule = (data: any) => {
     data.source_directory,
     data.target_directory,
     data.cron_expression,
-    data.file_pattern || '*.csv'
+    data.file_pattern || '*.csv',
+    data.selected_files || null
   );
   return result.lastInsertRowid;
 };

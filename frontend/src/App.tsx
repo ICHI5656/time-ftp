@@ -21,14 +21,16 @@ import {
   Schedule as ScheduleIcon,
   Dns as DnsIcon,
   History as HistoryIcon,
+  HelpOutline as HelpIcon,
 } from '@mui/icons-material'
 import Dashboard from './components/Dashboard'
 import FtpConfig from './components/FtpConfig'
 import ScheduleManager from './components/ScheduleManager'
 import FileUploader from './components/FileUploader'
 import UploadHistory from './components/UploadHistory'
+import UserGuide from './components/UserGuide'
 
-const drawerWidth = 240
+const drawerWidth = 280
 
 const menuItems = [
   { text: 'ダッシュボード', icon: <DashboardIcon />, path: '/' },
@@ -36,6 +38,7 @@ const menuItems = [
   { text: 'スケジュール管理', icon: <ScheduleIcon />, path: '/schedules' },
   { text: 'ファイルアップロード', icon: <CloudUploadIcon />, path: '/upload' },
   { text: 'アップロード履歴', icon: <HistoryIcon />, path: '/history' },
+  { text: '使い方ガイド', icon: <HelpIcon />, path: '/guide' },
 ]
 
 function App() {
@@ -146,6 +149,7 @@ function App() {
             <Route path="/schedules" element={<ScheduleManager />} />
             <Route path="/upload" element={<FileUploader />} />
             <Route path="/history" element={<UploadHistory />} />
+            <Route path="/guide" element={<UserGuide />} />
           </Routes>
         </Container>
       </Box>

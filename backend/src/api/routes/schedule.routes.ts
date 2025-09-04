@@ -16,6 +16,16 @@ const schedulerService = SchedulerService.getInstance();
 router.get('/', async (req: Request, res: Response) => {
   try {
     const schedules = getAllSchedules();
+    // JSON文字列をパースして配列に戻す
+    schedules.forEach(schedule => {
+      if (schedule.selected_files && typeof schedule.selected_files === 'string') {
+        try {
+          schedule.selected_files = JSON.parse(schedule.selected_files);
+        } catch (e) {
+          schedule.selected_files = null;
+        }
+      }
+    });
     res.json(schedules);
   } catch (error: any) {
     logger.error('Failed to get schedules:', error);
@@ -45,7 +55,8 @@ router.post('/',
     body('source_directory').notEmpty().withMessage('Source directory is required'),
     body('target_directory').notEmpty().withMessage('Target directory is required'),
     body('cron_expression').notEmpty().withMessage('Cron expression is required'),
-    body('file_pattern').optional().isString()
+    body('file_pattern').optional().isString(),
+    body('selected_files').optional().isArray()
   ],
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
@@ -54,8 +65,19 @@ router.post('/',
     }
 
     try {
-      const id = createSchedule(req.body);
+      // selected_filesが配列の場合はJSON文字列に変換
+      const scheduleData = { ...req.body };
+      if (scheduleData.selected_files) {
+        scheduleData.selected_files = JSON.stringify(scheduleData.selected_files);
+      }
+      
+      const id = createSchedule(scheduleData);
       const schedule = getSchedule(Number(id));
+      
+      // JSON文字列をパースして配列に戻す
+      if (schedule && schedule.selected_files && typeof schedule.selected_files === 'string') {
+        schedule.selected_files = JSON.parse(schedule.selected_files);
+      }
       
       // Start the schedule
       await schedulerService.createSchedule(schedule);
@@ -77,6 +99,7 @@ router.put('/:id',
     body('target_directory').optional().notEmpty(),
     body('cron_expression').optional().notEmpty(),
     body('file_pattern').optional().isString(),
+    body('selected_files').optional().isArray(),
     body('is_active').optional().isBoolean()
   ],
   async (req: Request, res: Response) => {
@@ -92,10 +115,16 @@ router.put('/:id',
         return res.status(404).json({ error: 'Schedule not found' });
       }
 
-      const updates = Object.entries(req.body)
+      // selected_filesが配列の場合はJSON文字列に変換
+      const updateData = { ...req.body };
+      if (updateData.selected_files) {
+        updateData.selected_files = JSON.stringify(updateData.selected_files);
+      }
+
+      const updates = Object.entries(updateData)
         .map(([key, value]) => `${key} = ?`)
         .join(', ');
-      const values = Object.values(req.body);
+      const values = Object.values(updateData);
       values.push(id);
 
       const stmt = db.prepare(`
@@ -106,6 +135,11 @@ router.put('/:id',
       stmt.run(...values);
 
       const updatedSchedule = getSchedule(id);
+      
+      // JSON文字列をパースして配列に戻す
+      if (updatedSchedule && updatedSchedule.selected_files && typeof updatedSchedule.selected_files === 'string') {
+        updatedSchedule.selected_files = JSON.parse(updatedSchedule.selected_files);
+      }
       
       // Update the running schedule
       await schedulerService.updateSchedule(id, updatedSchedule);
