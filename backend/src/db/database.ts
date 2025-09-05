@@ -132,7 +132,7 @@ export const createFtpConnection = (data: any) => {
     data.port || 21,
     data.user,
     data.password,
-    data.secure || 0,
+    data.secure ? 1 : 0,  // Convert boolean to integer
     data.default_directory || '/'
   );
   return result.lastInsertRowid;

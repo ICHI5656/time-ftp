@@ -44,7 +44,13 @@ router.post('/',
     body('user').notEmpty().withMessage('User is required'),
     body('password').notEmpty().withMessage('Password is required'),
     body('port').optional().isInt({ min: 1, max: 65535 }),
-    body('secure').optional().isBoolean(),
+    body('secure').optional().customSanitizer(value => {
+      // Convert string "true"/"false" or "on"/"off" to boolean
+      if (typeof value === 'string') {
+        return value === 'true' || value === 'on' || value === '1';
+      }
+      return !!value;
+    }),
     body('default_directory').optional().isString()
   ],
   async (req: Request, res: Response) => {
@@ -76,7 +82,13 @@ router.put('/:id',
     body('user').optional().notEmpty(),
     body('password').optional().notEmpty(),
     body('port').optional().isInt({ min: 1, max: 65535 }),
-    body('secure').optional().isBoolean(),
+    body('secure').optional().customSanitizer(value => {
+      // Convert string "true"/"false" or "on"/"off" to boolean
+      if (typeof value === 'string') {
+        return value === 'true' || value === 'on' || value === '1';
+      }
+      return !!value;
+    }),
     body('default_directory').optional().isString()
   ],
   async (req: Request, res: Response) => {
@@ -95,7 +107,13 @@ router.put('/:id',
       const updates = Object.entries(req.body)
         .map(([key, value]) => `${key} = ?`)
         .join(', ');
-      const values = Object.values(req.body);
+      const values = Object.entries(req.body).map(([key, value]) => {
+        // Convert boolean to integer for SQLite
+        if (key === 'secure' && typeof value === 'boolean') {
+          return value ? 1 : 0;
+        }
+        return value;
+      });
       values.push(id);
 
       const stmt = db.prepare(`

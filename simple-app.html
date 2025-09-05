@@ -303,7 +303,7 @@
             const data = {
                 name: formData.get('name'),
                 host: formData.get('host'),
-                port: parseInt(formData.get('port')),
+                port: parseInt(formData.get('port') || 21),
                 user: formData.get('user'),
                 password: formData.get('password'),
                 secure: false,
