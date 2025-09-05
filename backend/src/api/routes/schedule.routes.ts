@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { logger } from '../../config/logger';
 import { SchedulerService } from '../../services/scheduler-service';
+import { Schedule } from '../../types';
 import {
   getAllSchedules,
   getSchedule,
@@ -15,9 +16,9 @@ const schedulerService = SchedulerService.getInstance();
 // Get all schedules
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const schedules = getAllSchedules();
+    const schedules = getAllSchedules() as Schedule[];
     // JSON文字列をパースして配列に戻す
-    schedules.forEach(schedule => {
+    schedules.forEach((schedule: Schedule) => {
       if (schedule.selected_files && typeof schedule.selected_files === 'string') {
         try {
           schedule.selected_files = JSON.parse(schedule.selected_files);
@@ -72,7 +73,7 @@ router.post('/',
       }
       
       const id = createSchedule(scheduleData);
-      const schedule = getSchedule(Number(id));
+      const schedule = getSchedule(Number(id)) as Schedule;
       
       // JSON文字列をパースして配列に戻す
       if (schedule && schedule.selected_files && typeof schedule.selected_files === 'string') {
@@ -134,7 +135,7 @@ router.put('/:id',
       `);
       stmt.run(...values);
 
-      const updatedSchedule = getSchedule(id);
+      const updatedSchedule = getSchedule(id) as Schedule;
       
       // JSON文字列をパースして配列に戻す
       if (updatedSchedule && updatedSchedule.selected_files && typeof updatedSchedule.selected_files === 'string') {

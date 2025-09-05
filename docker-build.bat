@@ -1,10 +1,10 @@
 @echo off
 echo ========================================
-echo CSV FTP Uploader - Docker Build & Deploy
+echo CSV FTP Uploader - Docker Build
 echo ========================================
 echo.
 
-REM Dockerが起動しているか確認
+REM Check if Docker is running
 docker version >nul 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] Docker is not running!
@@ -67,7 +67,7 @@ if %errorlevel% equ 0 (
     echo   Redis:         localhost:6379
     echo.
     echo Container Status:
-    docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | findstr csv-ftp
+    docker ps | findstr csv-ftp
     echo.
     echo Commands:
     echo   View logs:     docker-compose logs -f
@@ -81,7 +81,7 @@ if %errorlevel% equ 0 (
     echo Please wait and check: http://localhost:8100
     echo.
     echo To check container status:
-    docker ps --format "table {{.Names}}\t{{.Status}}" | findstr csv-ftp
+    docker ps | findstr csv-ftp
 )
 
 echo.
