@@ -1,68 +1,87 @@
 @echo off
-echo ===============================
-echo Docker Build - CSV FTP Uploader
-echo ===============================
+echo ========================================
+echo CSV FTP Uploader - Docker Build & Deploy
+echo ========================================
 echo.
 
 REM Dockerが起動しているか確認
 docker version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo エラー: Dockerが起動していません
-    echo Docker Desktopを起動してください
+    echo [ERROR] Docker is not running!
+    echo Please start Docker Desktop first.
     pause
     exit /b 1
 )
 
-echo [1/4] 古いコンテナを停止中...
+echo [1/5] Checking Docker environment...
+docker info >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [ERROR] Cannot connect to Docker daemon.
+    pause
+    exit /b 1
+)
+
+echo [2/5] Stopping existing containers...
 docker-compose down >nul 2>&1
 
+echo [3/5] Building Docker images...
+echo   - Building backend (TypeScript/Express)...
+echo   - Building frontend (React/Vite)...
+echo   - Setting up Redis...
 echo.
-echo [2/4] Dockerイメージをビルド中...
 docker-compose build --no-cache
 
 if %errorlevel% neq 0 (
     echo.
-    echo エラー: ビルドに失敗しました
+    echo [ERROR] Build failed! Check the error messages above.
     pause
     exit /b 1
 )
 
 echo.
-echo [3/4] Dockerコンテナを起動中...
+echo [4/5] Starting containers...
 docker-compose up -d
 
 if %errorlevel% neq 0 (
     echo.
-    echo エラー: 起動に失敗しました
+    echo [ERROR] Failed to start containers.
     pause
     exit /b 1
 )
 
 echo.
-echo [4/4] 起動確認中...
-timeout /t 5 >nul
+echo [5/5] Waiting for services to be ready...
+timeout /t 8 >nul
 
-REM ヘルスチェック
-curl -s http://localhost:5000/api/health >nul 2>&1
+REM Health check
+curl -s -f http://localhost:5000/api/health >nul 2>&1
 if %errorlevel% equ 0 (
     echo.
-    echo ===============================
-    echo ✅ ビルド＆起動成功！
-    echo ===============================
+    echo ========================================
+    echo BUILD AND DEPLOYMENT SUCCESSFUL!
+    echo ========================================
     echo.
-    echo アプリケーション: http://localhost:8100
-    echo API: http://localhost:5000/api/health
+    echo Application URLs:
+    echo   Web Interface: http://localhost:8100
+    echo   Backend API:   http://localhost:5000
+    echo   Redis:         localhost:6379
     echo.
-    echo 確認方法:
-    echo 1. ブラウザで http://localhost:8100 を開く
-    echo 2. または simple-test.html を開く
+    echo Container Status:
+    docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | findstr csv-ftp
     echo.
-    echo ログ確認: docker-compose logs -f
-    echo 停止: docker-compose down
+    echo Commands:
+    echo   View logs:     docker-compose logs -f
+    echo   Stop:          docker-compose down
+    echo   Restart:       docker-compose restart
+    echo   Shell access:  docker exec -it csv-ftp-backend sh
+    echo.
 ) else (
     echo.
-    echo ⚠ サーバーの起動確認中...
-    echo 少し待ってから http://localhost:5000/api/health にアクセスしてください
+    echo [WARNING] Services are still starting up...
+    echo Please wait and check: http://localhost:8100
+    echo.
+    echo To check container status:
+    docker ps --format "table {{.Names}}\t{{.Status}}" | findstr csv-ftp
 )
 
 echo.

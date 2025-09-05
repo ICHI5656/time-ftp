@@ -69,13 +69,123 @@ cd frontend
 npm run dev
 ```
 
-## Docker環境
+## Docker環境構築（他のPC向け）
 
+### 必要なもの
+- Docker Desktop (Windows/Mac/Linux)
+- Git (オプション：コードをダウンロードする場合)
+
+### 手順
+
+#### 1. コードの取得
 ```bash
-docker-compose up -d
+# Gitを使う場合
+git clone <repository-url>
+cd time-ftp
+
+# またはZIPファイルでダウンロードして展開
 ```
 
-アプリケーションは http://localhost:8100 でアクセスできます。
+#### 2. 環境変数の準備
+```bash
+# 設定ファイルをコピー
+copy .env.example .env
+# または
+cp .env.example .env
+
+# 必要に応じて.envファイルを編集
+```
+
+#### 3. Dockerイメージのビルドと起動
+
+**Windows環境の場合：**
+```bash
+# 一括でビルド・起動（推奨）
+docker-build.bat
+
+# または個別に実行
+docker-compose build   # イメージのビルド
+docker-compose up -d   # コンテナ起動
+```
+
+**Mac/Linux環境の場合：**
+```bash
+# イメージのビルド
+docker-compose build
+
+# コンテナの起動
+docker-compose up -d
+
+# ログの確認
+docker-compose logs -f
+```
+
+#### 4. アクセス確認
+- **Webインターフェース**: http://localhost:8100
+- **APIエンドポイント**: http://localhost:5000/api/health
+
+### Docker管理コマンド
+
+**Windows用バッチファイル：**
+```bash
+docker-build.bat   # ビルドと起動
+docker-start.bat   # コンテナ起動のみ
+docker-stop.bat    # コンテナ停止
+```
+
+**共通コマンド：**
+```bash
+# コンテナの状態確認
+docker-compose ps
+
+# ログの確認
+docker-compose logs -f
+
+# 特定サービスのログ
+docker-compose logs -f backend
+docker-compose logs -f frontend
+
+# コンテナ再起動
+docker-compose restart
+
+# コンテナ停止と削除
+docker-compose down
+
+# ボリューム含めて完全削除
+docker-compose down -v
+
+# コンテナ内のシェルアクセス
+docker exec -it csv-ftp-backend sh
+```
+
+### トラブルシューティング
+
+**ポートが使用中の場合：**
+`.env`ファイルでポートを変更
+```
+BACKEND_PORT=5001
+FRONTEND_PORT=8101
+REDIS_PORT=6380
+```
+
+**ビルドが失敗する場合：**
+```bash
+# キャッシュをクリアして再ビルド
+docker-compose build --no-cache
+
+# Dockerのクリーンアップ
+docker system prune -a
+```
+
+**コンテナが起動しない場合：**
+```bash
+# 詳細なログを確認
+docker-compose logs backend
+docker-compose logs frontend
+
+# Docker Desktopが起動しているか確認
+docker version
+```
 
 ## 使用方法
 
