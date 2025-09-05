@@ -20,7 +20,6 @@ import {
   Grid,
   Divider,
   IconButton,
-  Tooltip,
   Card,
   CardContent,
   CardActions,
@@ -38,7 +37,6 @@ import {
   Folder as FolderIcon,
   Cloud as CloudIcon,
   CheckBox as CheckBoxIcon,
-  CheckBoxOutlineBlank as CheckBoxBlankIcon,
   Info as InfoIcon,
   AccessTime as AccessTimeIcon,
   InsertDriveFile as FileIcon
