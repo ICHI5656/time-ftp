@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
+import * as ftp from 'basic-ftp';
 import { logger } from '../../config/logger';
 import { FtpService } from '../../services/ftp-service';
 import {
@@ -148,6 +149,37 @@ router.delete('/:id', async (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error('Failed to delete FTP connection:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Test FTP connection without saving
+router.post('/test', async (req: Request, res: Response) => {
+  try {
+    const { host, port, user, password, secure } = req.body;
+    
+    const ftpService = new FtpService();
+    const client = new ftp.Client();
+    
+    await client.access({
+      host,
+      port: port || 21,
+      user,
+      password,
+      secure: secure || false
+    });
+    
+    await client.close();
+    
+    res.json({ 
+      success: true,
+      message: 'Connection successful'
+    });
+  } catch (error: any) {
+    logger.error('FTP connection test failed:', error);
+    res.json({ 
+      success: false,
+      error: error.message 
+    });
   }
 });
 
