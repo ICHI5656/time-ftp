@@ -24,6 +24,9 @@ app.use(express.urlencoded({ extended: true, limit: '550mb' }));
 // Static files for uploaded CSVs
 app.use('/uploads', express.static(path.join(__dirname, '../../data/uploads')));
 
+// Serve HTML interfaces
+app.use(express.static(path.join(__dirname, '../../')));
+
 // API Routes
 app.use('/api/ftp', ftpRoutes);
 app.use('/api/schedules', scheduleRoutes);

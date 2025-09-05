@@ -2,22 +2,22 @@ FROM node:18-alpine as builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy only package.json first for better caching
 COPY package.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies with clean install
+RUN npm ci --only=production || npm install --production=false
 
-# Copy source code
+# Copy source code (dockerignore will exclude node_modules)
 COPY . .
 
 # Build the application
 RUN npm run build
 
-# Production stage
+# Production stage - use smaller nginx alpine
 FROM nginx:alpine
 
-# Copy built files
+# Copy only the built files
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration

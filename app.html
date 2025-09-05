@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV FTP Uploader - 統合管理画面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-size: 15px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab:hover {
+            color: #333;
+        }
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        .content {
+            display: none;
+        }
+        .content.active {
+            display: block;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+            font-size: 14px;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        .list {
+            margin-top: 20px;
+        }
+        .list-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #667eea;
+        }
+        .list-item-info h3 {
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+        .list-item-info p {
+            color: #666;
+            font-size: 14px;
+        }
+        .list-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .alert {
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .loading.active {
+            display: flex;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .file-upload {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .file-upload:hover {
+            background: #f8f9fa;
+        }
+        .file-list {
+            margin-top: 20px;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .icon {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 CSV FTP Uploader - 統合管理画面</h1>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('ftp')">📡 FTP接続</button>
+                <button class="tab" onclick="switchTab('schedule')">⏰ スケジュール</button>
+                <button class="tab" onclick="switchTab('upload')">📤 ファイルアップロード</button>
+                <button class="tab" onclick="switchTab('history')">📊 実行履歴</button>
+            </div>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <!-- FTP接続管理 -->
+        <div id="ftp" class="content active">
+            <div class="card">
+                <h2>📡 新規FTP接続</h2>
+                <form id="ftp-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>接続名 *</label>
+                            <input type="text" name="name" required placeholder="例: 楽天CSV">
+                        </div>
+                        <div class="form-group">
+                            <label>ホスト *</label>
+                            <input type="text" name="host" required placeholder="例: upload.rakuten.ne.jp">
+                        </div>
+                        <div class="form-group">
+                            <label>ポート</label>
+                            <input type="number" name="port" value="21" placeholder="21">
+                        </div>
+                        <div class="form-group">
+                            <label>ユーザー名 *</label>
+                            <input type="text" name="user" required placeholder="FTPユーザー名">
+                        </div>
+                        <div class="form-group">
+                            <label>パスワード *</label>
+                            <input type="password" name="password" required placeholder="FTPパスワード">
+                        </div>
+                        <div class="form-group">
+                            <label>デフォルトディレクトリ</label>
+                            <input type="text" name="default_directory" value="/" placeholder="/">
+                        </div>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="secure" name="secure">
+                        <label for="secure">セキュア接続 (FTPS)</label>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn-primary">💾 保存</button>
+                        <button type="button" class="btn-secondary" onclick="testNewConnection()">🔍 接続テスト</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="section-header">
+                    <h2>📂 登録済みFTP接続</h2>
+                    <button class="btn-info" onclick="loadFTPConnections()">🔄 更新</button>
+                </div>
+                <div id="ftp-list" class="list"></div>
+            </div>
+        </div>
+
+        <!-- スケジュール管理 -->
+        <div id="schedule" class="content">
+            <div class="card">
+                <h2>⏰ 新規スケジュール</h2>
+                <form id="schedule-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>スケジュール名 *</label>
+                            <input type="text" name="name" required placeholder="例: 毎日朝9時アップロード">
+                        </div>
+                        <div class="form-group">
+                            <label>FTP接続 *</label>
+                            <select name="ftp_connection_id" required id="schedule-ftp-select">
+                                <option value="">選択してください</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>ソースディレクトリ</label>
+                            <input type="text" name="source_directory" value="uploads" placeholder="uploads">
+                        </div>
+                        <div class="form-group">
+                            <label>ターゲットディレクトリ</label>
+                            <input type="text" name="target_directory" value="/" placeholder="/">
+                        </div>
+                        <div class="form-group">
+                            <label>Cron式 *</label>
+                            <input type="text" name="cron_expression" required placeholder="0 9 * * *">
+                            <small style="color: #666;">例: 0 9 * * * (毎日9:00)</small>
+                        </div>
+                        <div class="form-group">
+                            <label>ファイルパターン</label>
+                            <input type="text" name="file_pattern" value="*.csv" placeholder="*.csv">
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn-primary">💾 保存</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="section-header">
+                    <h2>📅 登録済みスケジュール</h2>
+                    <button class="btn-info" onclick="loadSchedules()">🔄 更新</button>
+                </div>
+                <div id="schedule-list" class="list"></div>
+            </div>
+        </div>
+
+        <!-- ファイルアップロード -->
+        <div id="upload" class="content">
+            <div class="card">
+                <h2>📤 CSVファイルアップロード</h2>
+                <div class="file-upload" onclick="document.getElementById('file-input').click()">
+                    <p style="font-size: 48px; margin-bottom: 10px;">📁</p>
+                    <p>ここにファイルをドラッグ&ドロップ<br>またはクリックして選択</p>
+                    <input type="file" id="file-input" multiple accept=".csv" style="display: none;">
+                </div>
+                <div id="file-list" class="file-list"></div>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="uploadFiles()">⬆️ アップロード開始</button>
+                    <button class="btn-secondary" onclick="clearFiles()">🗑️ クリア</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 実行履歴 -->
+        <div id="history" class="content">
+            <div class="card">
+                <div class="section-header">
+                    <h2>📊 アップロード実行履歴</h2>
+                    <button class="btn-info" onclick="loadHistory()">🔄 更新</button>
+                </div>
+                <div id="history-list" class="list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let selectedFiles = [];
+
+        // タブ切り替え
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            // タブごとの初期化
+            if (tabName === 'ftp') loadFTPConnections();
+            if (tabName === 'schedule') {
+                loadSchedules();
+                loadFTPSelectOptions();
+            }
+            if (tabName === 'history') loadHistory();
+        }
+
+        // アラート表示
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                ${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}
+                ${message}
+            `;
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        // ローディング
+        function setLoading(show) {
+            document.getElementById('loading').classList.toggle('active', show);
+        }
+
+        // FTP接続一覧取得
+        async function loadFTPConnections() {
+            try {
+                const response = await fetch(`${API_URL}/ftp`);
+                const connections = await response.json();
+                
+                const list = document.getElementById('ftp-list');
+                if (connections.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: #999;">登録されている接続はありません</p>';
+                    return;
+                }
+                
+                list.innerHTML = connections.map(conn => `
+                    <div class="list-item">
+                        <div class="list-item-info">
+                            <h3>${conn.name}</h3>
+                            <p>${conn.host}:${conn.port} | ユーザー: ${conn.user} | ${conn.secure ? 'FTPS' : 'FTP'}</p>
+                        </div>
+                        <div class="list-item-actions">
+                            <span class="status-badge ${conn.is_active ? 'status-active' : 'status-inactive'}">
+                                ${conn.is_active ? '有効' : '無効'}
+                            </span>
+                            <button class="btn-success" onclick="testConnection(${conn.id})">テスト</button>
+                            <button class="btn-danger" onclick="deleteConnection(${conn.id})">削除</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                showAlert('接続一覧の取得に失敗しました', 'error');
+            }
+        }
+
+        // FTP接続保存
+        document.getElementById('ftp-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            setLoading(true);
+            
+            const formData = new FormData(e.target);
+            const data = {
+                name: formData.get('name'),
+                host: formData.get('host'),
+                port: parseInt(formData.get('port') || 21),
+                user: formData.get('user'),
+                password: formData.get('password'),
+                secure: formData.get('secure') === 'on',
+                default_directory: formData.get('default_directory') || '/'
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/ftp`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    showAlert('FTP接続を保存しました', 'success');
+                    e.target.reset();
+                    loadFTPConnections();
+                } else {
+                    showAlert('保存に失敗しました', 'error');
+                }
+            } catch (error) {
+                showAlert('エラーが発生しました', 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // 接続テスト
+        async function testConnection(id) {
+            setLoading(true);
+            try {
+                const response = await fetch(`${API_URL}/ftp/${id}/test`, {method: 'POST'});
+                const result = await response.json();
+                showAlert(result.success ? '接続成功！' : `接続失敗: ${result.error}`, 
+                         result.success ? 'success' : 'error');
+            } catch (error) {
+                showAlert('テスト中にエラーが発生しました', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // 接続削除
+        async function deleteConnection(id) {
+            if (!confirm('この接続を削除しますか？')) return;
+            
+            setLoading(true);
+            try {
+                const response = await fetch(`${API_URL}/ftp/${id}`, {method: 'DELETE'});
+                if (response.ok) {
+                    showAlert('接続を削除しました', 'success');
+                    loadFTPConnections();
+                }
+            } catch (error) {
+                showAlert('削除に失敗しました', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // スケジュール一覧取得
+        async function loadSchedules() {
+            try {
+                const response = await fetch(`${API_URL}/schedules`);
+                const schedules = await response.json();
+                
+                const list = document.getElementById('schedule-list');
+                if (schedules.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: #999;">登録されているスケジュールはありません</p>';
+                    return;
+                }
+                
+                list.innerHTML = schedules.map(schedule => `
+                    <div class="list-item">
+                        <div class="list-item-info">
+                            <h3>${schedule.name}</h3>
+                            <p>Cron: ${schedule.cron_expression} | パターン: ${schedule.file_pattern || '*.csv'}</p>
+                        </div>
+                        <div class="list-item-actions">
+                            <span class="status-badge ${schedule.is_active ? 'status-active' : 'status-inactive'}">
+                                ${schedule.is_active ? '有効' : '無効'}
+                            </span>
+                            <button class="btn-danger" onclick="deleteSchedule(${schedule.id})">削除</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                showAlert('スケジュール一覧の取得に失敗しました', 'error');
+            }
+        }
+
+        // FTP選択肢を読み込み
+        async function loadFTPSelectOptions() {
+            try {
+                const response = await fetch(`${API_URL}/ftp`);
+                const connections = await response.json();
+                
+                const select = document.getElementById('schedule-ftp-select');
+                select.innerHTML = '<option value="">選択してください</option>' +
+                    connections.map(conn => `<option value="${conn.id}">${conn.name}</option>`).join('');
+            } catch (error) {
+                console.error('FTP接続の取得に失敗:', error);
+            }
+        }
+
+        // スケジュール保存
+        document.getElementById('schedule-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            setLoading(true);
+            
+            const formData = new FormData(e.target);
+            const data = {
+                name: formData.get('name'),
+                ftp_connection_id: parseInt(formData.get('ftp_connection_id')),
+                source_directory: formData.get('source_directory') || 'uploads',
+                target_directory: formData.get('target_directory') || '/',
+                cron_expression: formData.get('cron_expression'),
+                file_pattern: formData.get('file_pattern') || '*.csv'
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/schedules`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    showAlert('スケジュールを保存しました', 'success');
+                    e.target.reset();
+                    loadSchedules();
+                } else {
+                    showAlert('保存に失敗しました', 'error');
+                }
+            } catch (error) {
+                showAlert('エラーが発生しました', 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // スケジュール削除
+        async function deleteSchedule(id) {
+            if (!confirm('このスケジュールを削除しますか？')) return;
+            
+            setLoading(true);
+            try {
+                const response = await fetch(`${API_URL}/schedules/${id}`, {method: 'DELETE'});
+                if (response.ok) {
+                    showAlert('スケジュールを削除しました', 'success');
+                    loadSchedules();
+                }
+            } catch (error) {
+                showAlert('削除に失敗しました', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // ファイル選択
+        document.getElementById('file-input').addEventListener('change', (e) => {
+            selectedFiles = Array.from(e.target.files);
+            displayFiles();
+        });
+
+        // ファイル表示
+        function displayFiles() {
+            const list = document.getElementById('file-list');
+            if (selectedFiles.length === 0) {
+                list.innerHTML = '';
+                return;
+            }
+            
+            list.innerHTML = selectedFiles.map(file => `
+                <div class="file-item">
+                    <span>📄 ${file.name}</span>
+                    <span>${(file.size / 1024).toFixed(2)} KB</span>
+                </div>
+            `).join('');
+        }
+
+        // ファイルアップロード
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) {
+                showAlert('ファイルを選択してください', 'error');
+                return;
+            }
+            
+            setLoading(true);
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+            
+            try {
+                const response = await fetch(`${API_URL}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    showAlert('ファイルをアップロードしました', 'success');
+                    clearFiles();
+                } else {
+                    showAlert('アップロードに失敗しました', 'error');
+                }
+            } catch (error) {
+                showAlert('エラーが発生しました', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // ファイルクリア
+        function clearFiles() {
+            selectedFiles = [];
+            document.getElementById('file-input').value = '';
+            displayFiles();
+        }
+
+        // 履歴取得
+        async function loadHistory() {
+            try {
+                const response = await fetch(`${API_URL}/history`);
+                const history = await response.json();
+                
+                const list = document.getElementById('history-list');
+                if (!history || history.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: #999;">履歴がありません</p>';
+                    return;
+                }
+                
+                list.innerHTML = history.map(item => `
+                    <div class="list-item">
+                        <div class="list-item-info">
+                            <h3>${item.filename}</h3>
+                            <p>${item.source_path} → ${item.target_path} | ${new Date(item.created_at).toLocaleString()}</p>
+                        </div>
+                        <div class="list-item-actions">
+                            <span class="status-badge ${item.status === 'success' ? 'status-active' : 'status-inactive'}">
+                                ${item.status === 'success' ? '成功' : '失敗'}
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                showAlert('履歴の取得に失敗しました', 'error');
+            }
+        }
+
+        // ドラッグ&ドロップ対応
+        const uploadArea = document.querySelector('.file-upload');
+        if (uploadArea) {
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.background = '#f0f0f0';
+            });
+            
+            uploadArea.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                uploadArea.style.background = '';
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.background = '';
+                
+                const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.csv'));
+                if (files.length > 0) {
+                    selectedFiles = files;
+                    displayFiles();
+                }
+            });
+        }
+
+        // 初期読み込み
+        loadFTPConnections();
+    </script>
+</body>
+</html>
