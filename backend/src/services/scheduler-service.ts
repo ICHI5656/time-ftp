@@ -86,7 +86,8 @@ export class SchedulerService {
       const ftpService = await this.ftpPool.getConnection(schedule.ftp_connection_id);
       
       // Get CSV files from source directory
-      const sourceDir = path.join(__dirname, '../../../data/uploads', schedule.source_directory);
+      const baseDir = path.join(__dirname, '../../../data/uploads');
+      const sourceDir = schedule.source_directory === '.' ? baseDir : path.join(baseDir, schedule.source_directory);
       const files = await this.getCSVFiles(sourceDir, schedule.file_pattern || '*.csv');
       
       if (files.length === 0) {

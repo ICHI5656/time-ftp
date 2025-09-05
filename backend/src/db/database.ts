@@ -191,7 +191,7 @@ export const getNextQueuedFile = (scheduleId: number) => {
 export const updateFileQueueStatus = (id: number, status: string, errorMessage?: string) => {
   const stmt = db.prepare(`
     UPDATE file_queue 
-    SET status = ?, error_message = ?, updated_at = CURRENT_TIMESTAMP 
+    SET status = ?, error_message = ?
     WHERE id = ?
   `);
   return stmt.run(status, errorMessage || null, id);

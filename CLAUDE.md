@@ -4,133 +4,151 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-CSV自動FTPアップロードシステム - CSVファイルを時間指定でFTPサーバーに順次アップロードする自動化システム。TypeScript/React/Express/SQLiteで構築され、ファイル順序制御、複数FTP接続管理、Cron式スケジューリング機能を提供。
+CSV自動FTPアップロードシステム - CSVファイルを時間指定でFTPサーバーに順次アップロードする自動化システム。TypeScript/React/Express/SQLiteで構築。
 
-## Development Commands
+## Quick Start Commands
 
-### Quick Start (Windows)
+### Windows最速起動
 ```bash
-# 最速テスト環境起動
-run-test.bat
+run-simple.bat      # バックエンド + Redis起動、HTMLインターフェース利用可能
+run-test.bat        # 完全なテスト環境起動（React UIも含む）
 ```
 
 ### Backend Development
 ```bash
 cd backend
-npm install          # 初回のみ
-npm run dev          # 開発サーバー起動 (tsx watch, ポート5000)
+npm run dev          # tsx watchモードで開発サーバー起動 (ポート5000)
 npm run build        # TypeScriptコンパイル
 npm run lint         # ESLintチェック
 npm test             # Jestテスト実行
 ```
 
-### Frontend Development
+### Frontend Development  
 ```bash
 cd frontend
-npm install          # 初回のみ
 npm run dev          # Vite開発サーバー起動
 npm run build        # 本番ビルド
 npm run lint         # ESLintチェック
 ```
 
-### Docker Environment
+### Docker Commands
 ```bash
-# 本番環境起動 (Redis + Backend + Frontend)
-docker-compose up -d
-
-# アクセスURL: http://localhost:8100
+docker-compose up -d           # 本番環境起動
+docker-compose -f docker-compose-dev.yml up  # 開発環境起動
+docker-compose logs -f backend # ログ確認
+docker-compose down            # 停止
 ```
 
-## Architecture Overview
-
-### System Components
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  React Frontend │────▶│ Express Backend │────▶│   FTP Servers   │
-│   (Material-UI) │     │   (TypeScript)  │     │                 │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-                               │
-                    ┌──────────┴──────────┐
-                    ▼                     ▼
-            ┌─────────────┐      ┌─────────────┐
-            │   SQLite    │      │    Redis    │
-            │  (Database) │      │   (Queue)   │
-            └─────────────┘      └─────────────┘
+### FTP問題の修正
+```bash
+fix-ftp.bat          # FTP接続の重複問題を自動修正
 ```
 
-### Key Backend Services
+## Architecture
 
-1. **SchedulerService** (`backend/src/services/scheduler-service.ts`)
-   - node-cronでCron式を処理
-   - アクティブなジョブをメモリで管理
-   - `initialize()` でDBから既存スケジュール復元
+### System Flow
+```
+HTML/React UI → Express API (5000) → SQLite + Redis → FTP Servers
+                     ↓
+              Scheduler Service (node-cron)
+                     ↓  
+              FTP Service (basic-ftp)
+```
 
-2. **FTPService** (`backend/src/services/ftp-service.ts`)
-   - basic-ftpライブラリをラップ
-   - エラーハンドリングとリトライロジック
-   - 並列アップロードのキュー管理
+### Key Services & Their Responsibilities
 
-3. **Database Schema** (`backend/src/db/database.ts`)
-   - `upload_schedules`: スケジュール定義 (selected_files JSONカラムでファイル指定)
-   - `ftp_connections`: FTP接続情報
-   - `file_queue`: アップロード待機キュー
-   - `upload_history`: 実行履歴
+**SchedulerService** (`backend/src/services/scheduler-service.ts`)
+- Cron式でスケジュールを管理
+- 起動時にDBから既存スケジュール復元
+- アクティブジョブをメモリ管理
 
-### Frontend State Management
+**FTPService** (`backend/src/services/ftp-service.ts`)
+- basic-ftpライブラリのラッパー
+- 自動リトライ (最大3回)
+- エラーハンドリングとログ記録
 
-- **ScheduleManager.tsx**: 
-  - ファイル選択モード切替 (パターンマッチ vs 個別選択)
-  - cron-parserで次回実行時刻計算
-  - ファイル順序表示 (001_ プレフィックス対応)
+**Database Schema** (`backend/src/db/database.ts`)
+- `ftp_connections`: FTP接続情報 (name はUNIQUE制約)
+- `upload_schedules`: スケジュール定義
+- `file_queue`: アップロード待機キュー
+- `upload_history`: 実行履歴
 
-- **FileUploader.tsx**:
-  - Multer経由で最大500MBファイルアップロード
-  - ファイル名順序制御 (001_, 002_ 推奨形式)
+### API Endpoints
 
-## Critical Configuration
+```
+POST   /api/ftp              # FTP接続登録
+POST   /api/ftp/test         # 新規接続テスト（保存なし）
+POST   /api/ftp/:id/test     # 登録済み接続テスト
+DELETE /api/ftp/:id          # FTP接続削除
+GET    /api/ftp              # FTP接続一覧
 
-### File Size Limits (500MB対応)
+POST   /api/schedules        # スケジュール作成
+GET    /api/schedules        # スケジュール一覧
+DELETE /api/schedules/:id    # スケジュール削除
+
+POST   /api/upload           # ファイルアップロード
+GET    /api/history          # アップロード履歴
+```
+
+## Critical Implementation Details
+
+### File Size Limits (500MB)
 - Backend: `express.json({ limit: '550mb' })`
 - Multer: `limits: { fileSize: 500 * 1024 * 1024 }`
-- Nginx: `client_max_body_size 550M`
 
-### Environment Variables
+### FTP Connection Validation
+- `secure` フィールドはカスタムサニタイザーで文字列→boolean変換
+- 接続名重複時は400エラー（日本語メッセージ）
+
+### File Upload Order
+- ファイル名先頭の数字でソート: `001_file.csv`, `002_file.csv`
+- `sortFilesByOrder()` 関数が制御
+
+### Available Interfaces
+React UIが動作しない場合の代替HTMLインターフェース：
+- `simple-app.html` - シンプル版管理画面
+- `ftp-manager.html` - FTP接続専用
+- `app.html` - フル機能版
+
+これらは `http://localhost:5000/[ファイル名]` でアクセス可能。
+
+## Common Issues & Solutions
+
+### FTP接続エラー (ECONNRESET)
+楽天FTPサーバー接続時に発生。楽天RMS管理画面でIPアドレス制限を確認。
+
+### 400 Bad Request
+同名のFTP接続が既存。別名で登録するか既存を削除。
+
+### React UI不応答
+`run-simple.bat` でHTMLインターフェース利用。
+
+## Testing
+
+### Test FTP Server (動作確認用)
+```javascript
+{
+  host: "ftp.dlptest.com",
+  user: "dlpuser", 
+  password: "rNrKYTX9g7z3RgJRmxWuGHbeu",
+  port: 21,
+  secure: false
+}
+```
+
+## Environment Variables
+
 ```bash
-# 必須設定
 DATABASE_PATH=./data/database.db    # SQLiteパス
-REDIS_HOST=localhost                 # Redisホスト
+REDIS_HOST=localhost                 # Redisホスト  
 PORT=5000                            # バックエンドポート
-
-# FTP設定
-FTP_DEFAULT_TIMEOUT=60000           # タイムアウト (ms)
+FTP_DEFAULT_TIMEOUT=60000           # タイムアウト(ms)
 FTP_DEFAULT_RETRY_COUNT=3           # リトライ回数
 ```
 
-### Cron Expression Format
-```
-分 時 日 月 曜日
-0  9  *  *  *    = 毎日9:00
-0  2  9  9  *    = 9月9日2:00
-```
+## Deployment
 
-## Important Implementation Details
-
-### File Upload Ordering
-- ファイル名先頭の数字でソート: `001_file.csv`, `002_file.csv`
-- `sortFilesByOrder()` 関数が順序を制御
-- アンダースコアは任意だが推奨
-
-### Schedule-File Binding
-- `selected_files`: JSON配列として特定ファイル指定
-- `file_pattern`: ワイルドカードで動的マッチング
-- 両方nullの場合は全CSVファイル対象
-
-### Error Recovery
-- FTPアップロード失敗時は自動リトライ (最大3回)
-- `upload_history` にエラーログ記録
-- スケジューラーサービスは再起動時に自動復元
-
-### Docker Deployment
 - Redis必須 (Bullキュー管理)
-- データ永続化: `./data` ボリュームマウント
+- データ永続化: `./data` ボリューム
 - ポート: Backend 5000, Frontend 8100, Redis 6379
+- Docker推奨 (`docker-compose.yml` 利用)

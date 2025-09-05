@@ -7,6 +7,7 @@ import {
   getAllSchedules,
   getSchedule,
   createSchedule,
+  getFtpConnection,
   db
 } from '../../db/database';
 
@@ -51,21 +52,34 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Create new schedule
 router.post('/',
   [
-    body('name').notEmpty().withMessage('Name is required'),
-    body('ftp_connection_id').isInt().withMessage('FTP connection ID is required'),
-    body('source_directory').notEmpty().withMessage('Source directory is required'),
-    body('target_directory').notEmpty().withMessage('Target directory is required'),
-    body('cron_expression').notEmpty().withMessage('Cron expression is required'),
-    body('file_pattern').optional().isString(),
+    body('name').notEmpty().withMessage('スケジュール名が必要です'),
+    body('ftp_connection_id').isInt({ min: 1 }).withMessage('有効なFTP接続IDが必要です'),
+    body('source_directory').notEmpty().withMessage('ソースディレクトリが必要です'),
+    body('target_directory').notEmpty().withMessage('ターゲットディレクトリが必要です'),
+    body('cron_expression').notEmpty().withMessage('Cron式が必要です'),
+    body('file_pattern').optional({ nullable: true }).isString(),
     body('selected_files').optional().isArray()
   ],
   async (req: Request, res: Response) => {
+    logger.info('=== DEBUG: Schedule creation request ===');
+    logger.info('Request body:', JSON.stringify(req.body, null, 2));
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      logger.warn('Validation errors:', JSON.stringify(errors.array(), null, 2));
       return res.status(400).json({ errors: errors.array() });
     }
 
     try {
+      // FTP接続の存在確認
+      const ftpConnection = getFtpConnection(req.body.ftp_connection_id);
+      if (!ftpConnection) {
+        return res.status(400).json({ 
+          error: '指定されたFTP接続が見つかりません。有効なFTP接続を選択してください。',
+          code: 'FTP_CONNECTION_NOT_FOUND'
+        });
+      }
+
       // selected_filesが配列の場合はJSON文字列に変換
       const scheduleData = { ...req.body };
       if (scheduleData.selected_files) {
@@ -86,7 +100,20 @@ router.post('/',
       res.status(201).json(schedule);
     } catch (error: any) {
       logger.error('Failed to create schedule:', error);
-      res.status(500).json({ error: error.message });
+      
+      if (error.message.includes('FOREIGN KEY constraint failed')) {
+        res.status(400).json({ 
+          error: 'FTP接続が無効です。有効なFTP接続を選択してください。',
+          code: 'FOREIGN_KEY_CONSTRAINT_FAILED'
+        });
+      } else if (error.message.includes('UNIQUE constraint failed')) {
+        res.status(400).json({ 
+          error: 'この名前のスケジュールは既に存在します。別の名前を使用してください。',
+          code: 'DUPLICATE_SCHEDULE_NAME'
+        });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
     }
   }
 );
@@ -114,6 +141,17 @@ router.put('/:id',
       const schedule = getSchedule(id);
       if (!schedule) {
         return res.status(404).json({ error: 'Schedule not found' });
+      }
+
+      // FTP接続の存在確認（更新時にftp_connection_idが指定された場合）
+      if (req.body.ftp_connection_id) {
+        const ftpConnection = getFtpConnection(req.body.ftp_connection_id);
+        if (!ftpConnection) {
+          return res.status(400).json({ 
+            error: '指定されたFTP接続が見つかりません。有効なFTP接続を選択してください。',
+            code: 'FTP_CONNECTION_NOT_FOUND'
+          });
+        }
       }
 
       // selected_filesが配列の場合はJSON文字列に変換
@@ -148,7 +186,15 @@ router.put('/:id',
       res.json(updatedSchedule);
     } catch (error: any) {
       logger.error('Failed to update schedule:', error);
-      res.status(500).json({ error: error.message });
+      
+      if (error.message.includes('FOREIGN KEY constraint failed')) {
+        res.status(400).json({ 
+          error: 'FTP接続が無効です。有効なFTP接続を選択してください。',
+          code: 'FOREIGN_KEY_CONSTRAINT_FAILED'
+        });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
     }
   }
 );

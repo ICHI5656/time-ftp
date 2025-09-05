@@ -67,7 +67,10 @@ router.post('/',
     } catch (error: any) {
       logger.error('Failed to create FTP connection:', error);
       if (error.message.includes('UNIQUE')) {
-        res.status(400).json({ error: 'Connection name already exists' });
+        res.status(400).json({ 
+          error: 'この名前の接続は既に存在します。別の名前を使用してください。',
+          suggestion: '既存の接続を削除するか、異なる名前を使用してください'
+        });
       } else {
         res.status(500).json({ error: error.message });
       }

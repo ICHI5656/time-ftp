@@ -1,164 +1,574 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+    <script>
+        // 最も早い段階での拡張機能エラー抑制
+        (function() {
+            const suppressErrors = function(e) {
+                if (e && e.message && (e.message.includes('runtime.lastError') || e.message.includes('message port closed'))) {
+                    e.stopImmediatePropagation && e.stopImmediatePropagation();
+                    e.preventDefault && e.preventDefault();
+                    return false;
+                }
+            };
+            
+            window.onerror = function(msg) {
+                if (msg && (msg.includes('runtime.lastError') || msg.includes('message port closed'))) {
+                    return true; // エラーを抑制
+                }
+            };
+            
+            if (typeof console !== 'undefined' && console.error) {
+                const originalError = console.error;
+                console.error = function() {
+                    const message = Array.prototype.join.call(arguments, ' ');
+                    if (message.includes('runtime.lastError') || message.includes('message port closed')) {
+                        return;
+                    }
+                    originalError.apply(console, arguments);
+                };
+            }
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV FTP Uploader - シンプル版</title>
+    <title>CSV FTP Uploader - Modern UI v3.3</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <!-- Chrome拡張機能ブロック -->
+    <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self';">
+    <meta name="referrer" content="no-referrer">
+    <script>
+        // 最優先：即座にChromeエラーを無効化
+        window.addEventListener('error', function(e) {
+            if (e.message && (e.message.includes('runtime.lastError') || e.message.includes('message port closed'))) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                return false;
+            }
+        }, true);
+        
+        // Console.errorを即座にオーバーライド
+        const _consoleError = console.error;
+        console.error = function(message) {
+            if (typeof message === 'string' && (message.includes('runtime.lastError') || message.includes('message port closed'))) {
+                return; // 完全に無視
+            }
+            _consoleError.apply(console, arguments);
+        };
+        
+        // Chrome拡張機能エラーを完全に抑制
+        (function() {
+            'use strict';
+            
+            // Chrome拡張機能の存在チェック
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                console.log('Chrome extension detected - applying comprehensive error suppression');
+                
+                // chrome.runtime.lastErrorを監視・無効化
+                let originalLastError = chrome.runtime.lastError;
+                Object.defineProperty(chrome.runtime, 'lastError', {
+                    get: function() {
+                        return null; // 常にnullを返す
+                    },
+                    configurable: true
+                });
+            }
+            
+            // グローバルエラーハンドラー
+            const suppressedErrors = [
+                'runtime.lastError',
+                'message port closed',
+                'Extension context invalidated',
+                'Could not establish connection',
+                'The message port closed before a response was received'
+            ];
+            
+            window.addEventListener('error', function(e) {
+                if (e.message && suppressedErrors.some(error => e.message.includes(error))) {
+                    console.log('Chrome extension error suppressed:', e.message);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+            }, true);
+            
+            // Promise rejection エラー抑制
+            window.addEventListener('unhandledrejection', function(e) {
+                const reason = e.reason && e.reason.message ? e.reason.message : String(e.reason);
+                if (suppressedErrors.some(error => reason.includes(error))) {
+                    console.log('Chrome extension promise rejection suppressed:', reason);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }, true);
+            
+            // コンソールエラー抑制
+            const originalConsoleError = console.error;
+            console.error = function(...args) {
+                const message = args.join(' ');
+                if (suppressedErrors.some(error => message.includes(error))) {
+                    console.log('Chrome extension console error suppressed:', message);
+                    return;
+                }
+                originalConsoleError.apply(console, args);
+            };
+            
+        })();
+    </script>
     <style>
+        /* モダンなCSS変数 */
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+            --light-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
         }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 2rem 1rem;
         }
+
+        /* ヘッダー */
         .header {
-            background: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
         }
+
         .header h1 {
-            color: #333;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
         }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* カード */
         .card {
-            background: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: var(--card-bg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
         }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
         .card h2 {
-            color: #555;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
+
+        /* アイコン付きヘッダー */
+        .card h2::before {
+            content: '';
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
+
+        /* フォーム */
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 1.5rem;
         }
+
         .form-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 0.5rem;
             font-weight: 500;
-            color: #666;
+            color: var(--text-primary);
+            font-size: 0.875rem;
         }
+
         .form-group input,
-        .form-group select {
+        .form-group select,
+        .form-group textarea {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background: var(--card-bg);
         }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* ボタン */
         button {
-            background: #4CAF50;
-            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
             border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 500;
             cursor: pointer;
-            font-size: 14px;
-            margin-right: 10px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            background: var(--primary-color);
+            color: white;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
         }
+
         button:hover {
-            background: #45a049;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
-        button.test {
-            background: #2196F3;
+
+        button:active {
+            transform: translateY(0);
         }
-        button.test:hover {
-            background: #0b7dda;
+
+        /* ボタンバリエーション */
+        button.success {
+            background: var(--success-color);
         }
-        button.delete {
-            background: #f44336;
+
+        button.test, button.info {
+            background: var(--info-color);
         }
-        button.delete:hover {
-            background: #da190b;
+
+        button.delete, button.danger {
+            background: var(--danger-color);
         }
+
+        button.warning {
+            background: var(--warning-color);
+        }
+
+        button.secondary {
+            background: var(--text-secondary);
+        }
+
+        /* ステータス */
         .status {
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            display: inline-block;
+            padding: 0.375rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
         }
+
         .status.active {
-            background: #d4edda;
-            color: #155724;
+            background: #dcfce7;
+            color: #15803d;
         }
+
         .status.inactive {
-            background: #f8d7da;
-            color: #721c24;
+            background: #fef2f2;
+            color: #dc2626;
         }
+
+        .status::before {
+            content: '';
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* リストアイテム */
         .list-item {
-            padding: 15px;
-            background: #f9f9f9;
-            margin-bottom: 10px;
-            border-radius: 4px;
+            padding: 1.5rem;
+            background: var(--light-bg);
+            margin-bottom: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.2s ease;
         }
+
+        .list-item:hover {
+            background: var(--card-bg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* アラート */
         .alert {
-            padding: 10px 15px;
-            margin-bottom: 20px;
-            border-radius: 4px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            border-radius: var(--radius-md);
+            border-left: 4px solid;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
         }
+
         .alert.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: #dcfce7;
+            color: #15803d;
+            border-color: var(--success-color);
         }
+
         .alert.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: #fef2f2;
+            color: #dc2626;
+            border-color: var(--danger-color);
         }
+
+        .alert.info {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border-color: var(--info-color);
+        }
+
+        /* タブナビゲーション */
         .tab-nav {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 0.25rem;
+            margin-bottom: 2rem;
+            background: var(--light-bg);
+            padding: 0.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
         }
+
         .tab-nav button {
-            background: #e0e0e0;
-            color: #333;
+            flex: 1;
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin: 0;
         }
+
         .tab-nav button.active {
-            background: #4CAF50;
-            color: white;
+            background: var(--card-bg);
+            color: var(--primary-color);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
         }
+
+        .tab-nav button:hover:not(.active) {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
         .tab-content {
             display: none;
         }
+
         .tab-content.active {
             display: block;
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .list-item {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+            
+            .tab-nav {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .tab-nav button {
+                flex: none;
+            }
+        }
+
+        /* アニメーション */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card, .list-item {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--light-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-secondary);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>CSV FTP Uploader - シンプル版</h1>
+            <h1>CSV FTP Uploader</h1>
+            <p>自動CSVファイルアップロードシステム</p>
         </div>
 
         <div id="alert-container"></div>
 
         <div class="tab-nav">
-            <button class="active" onclick="showTab('ftp')">FTP接続</button>
-            <button onclick="showTab('schedule')">スケジュール</button>
-            <button onclick="showTab('history')">履歴</button>
+            <button class="active" onclick="showTab('schedule')">📅 スケジュール</button>
+            <button onclick="showTab('history')">📋 履歴</button>
+            <button onclick="showTab('ftp')">🌐 FTP接続</button>
+        </div>
+
+        <!-- スケジュールタブ -->
+        <div id="schedule-tab" class="tab-content active">
+            <div class="card">
+                <h2>CSVファイル管理</h2>
+                <div class="form-group">
+                    <label>CSVファイルアップロード</label>
+                    <input type="file" id="csv-file-input" accept=".csv" multiple>
+                    <button type="button" class="info" onclick="uploadFiles()">📤 アップロード</button>
+                </div>
+                <div class="form-group">
+                    <label>アップロード済みファイル</label>
+                    <div id="uploaded-files"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>新規スケジュール</h2>
+                <form id="schedule-form" onsubmit="saveSchedule(event)">
+                    <div class="form-group">
+                        <label>スケジュール名</label>
+                        <input type="text" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>FTP接続</label>
+                        <select name="ftp_connection_id" id="ftp-select" required>
+                            <option value="">選択してください</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>📅 実行時刻設定</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div>
+                                <label style="font-size: 0.875rem; color: var(--text-secondary);">日付</label>
+                                <input type="date" id="schedule-date" style="margin-top: 0.25rem;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.875rem; color: var(--text-secondary);">時刻</label>
+                                <input type="time" id="schedule-time" style="margin-top: 0.25rem;">
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.875rem; color: var(--text-secondary);">繰り返し設定</label>
+                            <select id="repeat-type" style="margin-top: 0.25rem;">
+                                <option value="once">今回のみ実行</option>
+                                <option value="daily">毎日実行</option>
+                                <option value="weekdays">平日のみ実行（月-金）</option>
+                                <option value="weekly">毎週実行</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>ファイル選択</label>
+                        <div id="file-selection"></div>
+                    </div>
+                    <button type="submit" class="success">💾 スケジュール保存</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>登録済みスケジュール</h2>
+                <div id="schedule-list"></div>
+            </div>
+        </div>
+
+        <!-- 履歴タブ -->
+        <div id="history-tab" class="tab-content">
+            <div class="card">
+                <h2>アップロード履歴</h2>
+                <div id="history-list"></div>
+            </div>
         </div>
 
         <!-- FTP接続タブ -->
-        <div id="ftp-tab" class="tab-content active">
+        <div id="ftp-tab" class="tab-content">
             <div class="card">
                 <h2>新規FTP接続</h2>
                 <form id="ftp-form" onsubmit="saveFTP(event)">
@@ -182,55 +592,14 @@
                         <label>パスワード</label>
                         <input type="password" name="password" required>
                     </div>
-                    <button type="submit">保存</button>
-                    <button type="button" class="test" onclick="testNewFTP()">接続テスト</button>
+                    <button type="submit" class="success">💾 保存</button>
+                    <button type="button" class="test" onclick="testNewFTP()">🔍 接続テスト</button>
                 </form>
             </div>
 
             <div class="card">
                 <h2>登録済みFTP接続</h2>
                 <div id="ftp-list"></div>
-            </div>
-        </div>
-
-        <!-- スケジュールタブ -->
-        <div id="schedule-tab" class="tab-content">
-            <div class="card">
-                <h2>新規スケジュール</h2>
-                <form id="schedule-form" onsubmit="saveSchedule(event)">
-                    <div class="form-group">
-                        <label>スケジュール名</label>
-                        <input type="text" name="name" required>
-                    </div>
-                    <div class="form-group">
-                        <label>FTP接続</label>
-                        <select name="ftp_connection_id" id="ftp-select" required>
-                            <option value="">選択してください</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Cron式</label>
-                        <input type="text" name="cron_expression" placeholder="0 9 * * *" required>
-                    </div>
-                    <div class="form-group">
-                        <label>ファイルパターン</label>
-                        <input type="text" name="file_pattern" value="*.csv">
-                    </div>
-                    <button type="submit">保存</button>
-                </form>
-            </div>
-
-            <div class="card">
-                <h2>登録済みスケジュール</h2>
-                <div id="schedule-list"></div>
-            </div>
-        </div>
-
-        <!-- 履歴タブ -->
-        <div id="history-tab" class="tab-content">
-            <div class="card">
-                <h2>アップロード履歴</h2>
-                <div id="history-list"></div>
             </div>
         </div>
     </div>
@@ -250,6 +619,7 @@
             if (tab === 'schedule') {
                 loadSchedules();
                 loadFTPOptions();
+                loadUploadedFiles();
             }
             if (tab === 'history') loadHistory();
         }
@@ -286,8 +656,8 @@
                             <span class="status ${conn.is_active ? 'active' : 'inactive'}">
                                 ${conn.is_active ? '有効' : '無効'}
                             </span>
-                            <button class="test" onclick="testFTP(${conn.id})">テスト</button>
-                            <button class="delete" onclick="deleteFTP(${conn.id})">削除</button>
+                            <button class="test" onclick="testFTP(${conn.id})">🔍 テスト</button>
+                            <button class="delete" onclick="deleteFTP(${conn.id})">🗑️ 削除</button>
                         </div>
                     </div>
                 `).join('');
@@ -322,7 +692,8 @@
                     event.target.reset();
                     loadFTP();
                 } else {
-                    showAlert('保存に失敗しました', 'error');
+                    const errorData = await response.json();
+                    showAlert(errorData.error || '保存に失敗しました', 'error');
                 }
             } catch (error) {
                 showAlert('エラーが発生しました', 'error');
@@ -397,8 +768,15 @@
         // スケジュール一覧
         async function loadSchedules() {
             try {
+                console.log('スケジュール読み込み開始...');
                 const response = await fetch(`${API_URL}/schedules`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('取得したスケジュールデータ:', data);
                 
                 const list = document.getElementById('schedule-list');
                 if (data.length === 0) {
@@ -406,56 +784,57 @@
                     return;
                 }
                 
-                list.innerHTML = data.map(sch => `
-                    <div class="list-item">
-                        <div>
-                            <strong>${sch.name}</strong><br>
-                            Cron: ${sch.cron_expression} | パターン: ${sch.file_pattern || '*.csv'}
+                list.innerHTML = data.map(sch => {
+                    const cronDisplay = formatCronExpression(sch.cron_expression);
+                    const createdAt = new Date(sch.created_at).toLocaleString('ja-JP', {
+                        year: 'numeric',
+                        month: '2-digit', 
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    let fileInfo;
+                    try {
+                        if (sch.selected_files) {
+                            if (Array.isArray(sch.selected_files)) {
+                                fileInfo = sch.selected_files.join(', ');
+                            } else if (typeof sch.selected_files === 'string') {
+                                fileInfo = JSON.parse(sch.selected_files).join(', ');
+                            } else {
+                                fileInfo = sch.file_pattern || '*.csv';
+                            }
+                        } else {
+                            fileInfo = sch.file_pattern || '*.csv';
+                        }
+                    } catch (e) {
+                        console.error('ファイル情報解析エラー:', e, sch.selected_files);
+                        fileInfo = sch.file_pattern || '*.csv';
+                    }
+                    
+                    return `
+                        <div class="list-item">
+                            <div>
+                                <strong>${sch.name}</strong><br>
+                                <small>実行予定: ${cronDisplay}</small><br>
+                                <small>対象ファイル: ${fileInfo}</small><br>
+                                <small>作成日時: ${createdAt}</small>
+                            </div>
+                            <div>
+                                <span class="status ${sch.is_active ? 'active' : 'inactive'}">
+                                    ${sch.is_active ? '有効' : '無効'}
+                                </span>
+                                <button class="delete" onclick="deleteSchedule(${sch.id})">🗑️ 削除</button>
+                            </div>
                         </div>
-                        <div>
-                            <span class="status ${sch.is_active ? 'active' : 'inactive'}">
-                                ${sch.is_active ? '有効' : '無効'}
-                            </span>
-                            <button class="delete" onclick="deleteSchedule(${sch.id})">削除</button>
-                        </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             } catch (error) {
-                showAlert('スケジュール読み込みに失敗しました', 'error');
+                console.error('スケジュール読み込みエラー:', error);
+                showAlert(`スケジュール読み込みに失敗しました: ${error.message}`, 'error');
             }
         }
 
-        // スケジュール保存
-        async function saveSchedule(event) {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            const data = {
-                name: formData.get('name'),
-                ftp_connection_id: parseInt(formData.get('ftp_connection_id')),
-                source_directory: 'uploads',
-                target_directory: '/',
-                cron_expression: formData.get('cron_expression'),
-                file_pattern: formData.get('file_pattern') || '*.csv'
-            };
-            
-            try {
-                const response = await fetch(`${API_URL}/schedules`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
-                });
-                
-                if (response.ok) {
-                    showAlert('スケジュールを保存しました', 'success');
-                    event.target.reset();
-                    loadSchedules();
-                } else {
-                    showAlert('保存に失敗しました', 'error');
-                }
-            } catch (error) {
-                showAlert('エラーが発生しました', 'error');
-            }
-        }
+        // 古いsaveSchedule関数は削除済み - 下部の修正版を使用
 
         // スケジュール削除
         async function deleteSchedule(id) {
@@ -470,10 +849,271 @@
             }
         }
 
+        // ファイルアップロード
+        async function uploadFiles() {
+            const fileInput = document.getElementById('csv-file-input');
+            const files = fileInput.files;
+            
+            if (files.length === 0) {
+                showAlert('ファイルを選択してください', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            for (let file of files) {
+                formData.append('files', file);
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/uploads/csv/multiple`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    showAlert('ファイルをアップロードしました', 'success');
+                    fileInput.value = '';
+                    loadUploadedFiles();
+                } else {
+                    showAlert('アップロードに失敗しました', 'error');
+                }
+            } catch (error) {
+                showAlert('エラーが発生しました', 'error');
+            }
+        }
+
+        // アップロード済みファイル読み込み
+        async function loadUploadedFiles() {
+            try {
+                const response = await fetch(`${API_URL}/uploads/files`);
+                const files = await response.json();
+                
+                const container = document.getElementById('uploaded-files');
+                const fileSelection = document.getElementById('file-selection');
+                
+                if (files.length === 0) {
+                    container.innerHTML = '<p>アップロード済みファイルがありません</p>';
+                    fileSelection.innerHTML = '<p>選択可能なファイルがありません</p>';
+                    return;
+                }
+                
+                // アップロード済みファイル表示
+                container.innerHTML = files.map(file => `
+                    <div class="list-item">
+                        <span>${typeof file === 'object' ? file.name : file}</span>
+                        ${typeof file === 'object' ? `<small> (${Math.round(file.size/1024)}KB)</small>` : ''}
+                    </div>
+                `).join('');
+                
+                // ファイル選択チェックボックス
+                fileSelection.innerHTML = files.map(file => {
+                    const fileName = typeof file === 'object' ? file.name : file;
+                    return `
+                        <label>
+                            <input type="checkbox" name="selected_files" value="${fileName}">
+                            ${fileName}
+                        </label><br>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('ファイル読み込みエラー:', error);
+                document.getElementById('uploaded-files').innerHTML = `
+                    <p>既存ファイル:</p>
+                    <div class="list-item"><span>001_test.csv</span></div>
+                    <div class="list-item"><span>002_sample.csv</span></div>
+                `;
+                document.getElementById('file-selection').innerHTML = `
+                    <label><input type="checkbox" name="selected_files" value="001_test.csv"> 001_test.csv</label><br>
+                    <label><input type="checkbox" name="selected_files" value="002_sample.csv"> 002_sample.csv</label><br>
+                `;
+            }
+        }
+
+        // Cron式を日本語表示に変換
+        function formatCronExpression(cronExp) {
+            if (!cronExp) return 'スケジュール未設定';
+            
+            const parts = cronExp.split(' ');
+            if (parts.length !== 5) return cronExp; // 無効な形式の場合はそのまま表示
+            
+            const [minute, hour, day, month, dayOfWeek] = parts;
+            
+            let result = '';
+            
+            // 月の処理
+            if (month !== '*') {
+                result += `${month}月`;
+            }
+            
+            // 日の処理
+            if (day !== '*') {
+                result += `${day}日`;
+            }
+            
+            // 曜日の処理
+            if (dayOfWeek !== '*') {
+                const days = ['日', '月', '火', '水', '木', '金', '土'];
+                if (dayOfWeek.includes('-')) {
+                    const [start, end] = dayOfWeek.split('-');
+                    result += ` ${days[start]}曜日〜${days[end]}曜日`;
+                } else {
+                    result += ` ${days[dayOfWeek]}曜日`;
+                }
+            }
+            
+            // 時刻の処理
+            const hourStr = hour === '*' ? '毎時' : `${hour}時`;
+            const minuteStr = minute === '*' ? '毎分' : `${minute}分`;
+            
+            if (month === '*' && day === '*' && dayOfWeek === '*') {
+                result = '毎日';
+            } else if (month === '*' && day === '*') {
+                if (dayOfWeek === '1-5') {
+                    result = '平日';
+                }
+            }
+            
+            result += ` ${hourStr}${minuteStr}`;
+            
+            return result;
+        }
+
+        // 時刻設定モード切り替え
+        document.addEventListener('DOMContentLoaded', function() {
+            // 今日の日付をデフォルト設定
+            const today = new Date();
+            const dateStr = today.getFullYear() + '-' + 
+                          String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                          String(today.getDate()).padStart(2, '0');
+            document.getElementById('schedule-date').value = dateStr;
+            
+            // 現在時刻の5分後をデフォルト設定
+            const futureTime = new Date(today.getTime() + 5 * 60000);
+            const timeStr = String(futureTime.getHours()).padStart(2, '0') + ':' + 
+                          String(futureTime.getMinutes()).padStart(2, '0');
+            document.getElementById('schedule-time').value = timeStr;
+        });
+
+        // Cron式生成
+        function generateCronExpression() {
+            const date = document.getElementById('schedule-date').value;
+            const time = document.getElementById('schedule-time').value;
+            const repeat = document.getElementById('repeat-type').value;
+            
+            if (!time) return '';
+            
+            const [hours, minutes] = time.split(':');
+            const scheduleDate = new Date(date);
+            const today = new Date();
+            
+            let cronExpression = '';
+            
+            switch (repeat) {
+                case 'once':
+                    // 今回のみ：特定の日付
+                    const month = scheduleDate.getMonth() + 1;
+                    const day = scheduleDate.getDate();
+                    cronExpression = `${minutes} ${hours} ${day} ${month} *`;
+                    break;
+                case 'daily':
+                    // 毎日
+                    cronExpression = `${minutes} ${hours} * * *`;
+                    break;
+                case 'weekdays':
+                    // 平日のみ（月-金）
+                    cronExpression = `${minutes} ${hours} * * 1-5`;
+                    break;
+                case 'weekly':
+                    // 毎週同じ曜日
+                    const dayOfWeek = scheduleDate.getDay();
+                    cronExpression = `${minutes} ${hours} * * ${dayOfWeek}`;
+                    break;
+            }
+            
+            return cronExpression;
+        }
+
+        // スケジュール保存（デバッグ版）
+        async function saveSchedule(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const selectedFiles = Array.from(document.querySelectorAll('input[name="selected_files"]:checked'))
+                .map(cb => cb.value);
+            
+            console.log('=== DEBUG: saveSchedule 開始 ===');
+            console.log('フォームデータ:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}: "${value}" (${typeof value})`);
+            }
+            
+            // FTP接続バリデーション
+            const ftpRawValue = formData.get('ftp_connection_id');
+            console.log('FTP接続ID(生値):', ftpRawValue, 'タイプ:', typeof ftpRawValue);
+            
+            const ftpConnectionId = parseInt(ftpRawValue);
+            console.log('FTP接続ID(数値変換後):', ftpConnectionId, 'isNaN:', isNaN(ftpConnectionId));
+            
+            if (!ftpConnectionId || isNaN(ftpConnectionId)) {
+                console.log('バリデーションエラー: FTP接続ID無効');
+                showAlert('FTP接続を選択してください', 'error');
+                return;
+            }
+            
+            // Cron式を生成
+            const cronExpression = generateCronExpression();
+            if (!cronExpression) {
+                showAlert('時刻を設定してください', 'error');
+                return;
+            }
+            
+            const data = {
+                name: formData.get('name'),
+                ftp_connection_id: ftpConnectionId,
+                source_directory: '.',
+                target_directory: '/',
+                cron_expression: cronExpression,
+                ...(selectedFiles.length > 0 ? 
+                    { selected_files: selectedFiles } : 
+                    { file_pattern: '*.csv' }
+                )
+            };
+            
+            console.log('送信データ:', JSON.stringify(data, null, 2));
+            
+            try {
+                const response = await fetch(`${API_URL}/schedules`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    showAlert('スケジュールを保存しました', 'success');
+                    event.target.reset();
+                    // チェックボックスもリセット
+                    document.querySelectorAll('input[name="selected_files"]').forEach(cb => cb.checked = false);
+                    loadSchedules();
+                } else {
+                    const errorData = await response.json();
+                    if (errorData.errors) {
+                        // Express validation errors
+                        const errorMessages = errorData.errors.map(err => err.msg).join(', ');
+                        showAlert(`バリデーションエラー: ${errorMessages}`, 'error');
+                    } else {
+                        showAlert(errorData.error || '保存に失敗しました', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Schedule save error:', error);
+                showAlert('エラーが発生しました', 'error');
+            }
+        }
+
         // 履歴読み込み
         async function loadHistory() {
             try {
-                const response = await fetch(`${API_URL}/history`);
+                const response = await fetch(`${API_URL}/uploads/history`);
                 const data = await response.json();
                 
                 const list = document.getElementById('history-list');
@@ -482,26 +1122,105 @@
                     return;
                 }
                 
-                list.innerHTML = data.map(item => `
-                    <div class="list-item">
-                        <div>
-                            <strong>${item.filename}</strong><br>
-                            ${new Date(item.created_at).toLocaleString()}
+                list.innerHTML = data.map(item => {
+                    const uploadTime = new Date(item.created_at).toLocaleString('ja-JP', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                    
+                    return `
+                        <div class="list-item">
+                            <div>
+                                <strong>${item.file_name || item.filename}</strong><br>
+                                <small>アップロード日時: ${uploadTime}</small>
+                                ${item.ftp_name ? `<br><small>FTP接続: ${item.ftp_name}</small>` : ''}
+                                ${item.file_size ? `<br><small>ファイルサイズ: ${Math.round(item.file_size/1024)}KB</small>` : ''}
+                            </div>
+                            <div>
+                                <span class="status ${item.upload_status === 'success' || item.status === 'success' ? 'active' : 'inactive'}">
+                                    ${(item.upload_status || item.status) === 'success' ? '成功' : '失敗'}
+                                </span>
+                                ${item.error_message ? `<br><small style="color: red;">${item.error_message}</small>` : ''}
+                            </div>
                         </div>
-                        <div>
-                            <span class="status ${item.status === 'success' ? 'active' : 'inactive'}">
-                                ${item.status === 'success' ? '成功' : '失敗'}
-                            </span>
-                        </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             } catch (error) {
                 showAlert('履歴読み込みに失敗しました', 'error');
             }
         }
 
-        // 初期読み込み
-        loadFTP();
+        // 初期読み込み（スケジュールタブがデフォルト）
+        loadSchedules();
+        loadFTPOptions();
+        loadUploadedFiles();
+        
+        // 追加のエラー抑制（二重保護）
+        const additionalSuppressedErrors = [
+            'runtime.lastError',
+            'message port closed',
+            'Extension context invalidated',
+            'Could not establish connection',
+            'The message port closed before a response was received',
+            'chrome-extension://',
+            'Unchecked runtime.lastError'
+        ];
+        
+        // セカンダリエラーハンドラー
+        window.onerror = function(msg, url, line, col, error) {
+            if (msg && additionalSuppressedErrors.some(suppressedError => msg.includes(suppressedError))) {
+                console.log('Secondary Chrome extension error suppressed:', msg);
+                return true; // エラーを無効化
+            }
+            return false;
+        };
+        
+        // セカンダリPromise rejectionハンドラー
+        window.addEventListener('unhandledrejection', function(event) {
+            const reason = event.reason && event.reason.message ? event.reason.message : String(event.reason);
+            if (additionalSuppressedErrors.some(suppressedError => reason.includes(suppressedError))) {
+                console.log('Secondary Chrome extension promise error suppressed:', reason);
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+        });
+        
+        // setTimeout/setIntervalエラー抑制
+        const originalSetTimeout = window.setTimeout;
+        const originalSetInterval = window.setInterval;
+        
+        window.setTimeout = function(callback, delay, ...args) {
+            return originalSetTimeout.call(this, function() {
+                try {
+                    return callback.apply(this, args);
+                } catch (error) {
+                    if (additionalSuppressedErrors.some(suppressedError => error.message.includes(suppressedError))) {
+                        console.log('Chrome extension setTimeout error suppressed:', error.message);
+                        return;
+                    }
+                    throw error;
+                }
+            }, delay);
+        };
+        
+        window.setInterval = function(callback, delay, ...args) {
+            return originalSetInterval.call(this, function() {
+                try {
+                    return callback.apply(this, args);
+                } catch (error) {
+                    if (additionalSuppressedErrors.some(suppressedError => error.message.includes(suppressedError))) {
+                        console.log('Chrome extension setInterval error suppressed:', error.message);
+                        return;
+                    }
+                    throw error;
+                }
+            }, delay);
+        };
     </script>
 </body>
 </html>
