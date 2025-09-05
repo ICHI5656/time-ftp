@@ -14,6 +14,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 // Middleware
 app.use(cors());
@@ -63,9 +64,10 @@ const startServer = async () => {
     logger.info('Scheduler service initialized');
 
     // Start server
-    app.listen(PORT, () => {
-      logger.info(`Server is running on port ${PORT}`);
+    app.listen(PORT, HOST, () => {
+      logger.info(`Server is running on ${HOST}:${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV}`);
+      logger.info(`Access the app at: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/simple-app.html`);
     });
   } catch (error) {
     logger.error('Failed to start server:', error);
