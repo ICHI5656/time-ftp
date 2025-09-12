@@ -1049,6 +1049,46 @@
                     if (window.showToast) {
                         window.showToast('プロファイルが見つかりません', 'error');
                     }
+                    
+                    // スケジュールのステータスを失敗に更新
+                    schedule.status = 'failed';
+                    schedule.lastExecuted = new Date().toISOString();
+                    schedule.error = 'プロファイルが見つかりません';
+                    
+                    // 履歴に失敗として記録
+                    const historyEntry = {
+                        id: Date.now().toString(),
+                        file_name: schedule.name || schedule.fileName || 'Unknown',
+                        profile_id: schedule.profile_id,
+                        profile_name: 'プロファイル不明',
+                        upload_path: schedule.upload_directory || '/',
+                        uploaded_at: new Date().toISOString(),
+                        status: 'failed',
+                        error: 'プロファイルが見つかりません',
+                        file_size: 0,
+                        duration_ms: 0,
+                        protocol: 'unknown',
+                        schedule_executed: true
+                    };
+                    
+                    const history = JSON.parse(localStorage.getItem('uploadHistory') || '[]');
+                    history.unshift(historyEntry);
+                    if (history.length > 100) history.pop();
+                    localStorage.setItem('uploadHistory', JSON.stringify(history));
+                    
+                    // スケジュールリストを更新
+                    const schedules = JSON.parse(localStorage.getItem('scheduledUploads') || '[]');
+                    const updatedSchedules = schedules.map(s => s.id === schedule.id ? schedule : s);
+                    localStorage.setItem('scheduledUploads', JSON.stringify(updatedSchedules));
+                    
+                    // UIを更新
+                    if (typeof loadHistory === 'function') {
+                        loadHistory();
+                    }
+                    if (typeof updateScheduleList === 'function') {
+                        updateScheduleList();
+                    }
+                    
                     return;
                 }
                 
