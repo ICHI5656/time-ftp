@@ -1180,13 +1180,6 @@
                                 console.log('📊 履歴タブがアクティブなので再描画');
                                 updateHistoryList(JSON.parse(localStorage.getItem('uploadHistory') || '[]'));
                             }
-                            
-                            // タブが履歴の場合、強制的に再描画
-                            const activeTab = document.querySelector('.tab-button.active');
-                            if (activeTab && activeTab.textContent.includes('履歴')) {
-                                console.log('📊 履歴タブがアクティブなので再描画');
-                                updateHistoryList(JSON.parse(localStorage.getItem('uploadHistory') || '[]'));
-                            }
                         } else {
                             showToast(`スケジュール実行失敗: ${result.message}`, 'error');
                             
@@ -1538,7 +1531,7 @@
         }
         
         // UI関数
-        function switchTab(tabName, element) {
+        window.switchTab = function(tabName, element) {
             console.log('📑 タブ切り替え:', tabName);
             
             // Remove active from all tabs and content
