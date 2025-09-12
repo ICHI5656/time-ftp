@@ -852,7 +852,7 @@
                             const historyEntry = {
                                 id: Date.now().toString(),
                                 file_name: file.name,
-                                profile_id: profileId,
+                                profile_id: String(profileId),
                                 profile_name: profile ? profile.name : 'Unknown',
                                 upload_path: directory,
                                 uploaded_at: new Date().toISOString(),
@@ -879,7 +879,7 @@
                             const historyEntry = {
                                 id: Date.now().toString(),
                                 file_name: file.name,
-                                profile_id: profileId,
+                                profile_id: String(profileId),
                                 profile_name: profile ? profile.name : 'Unknown',
                                 upload_path: directory,
                                 uploaded_at: new Date().toISOString(),
@@ -939,7 +939,7 @@
                             const newSchedule = {
                                 id: Date.now().toString(),
                                 name: file.name,
-                                profile_id: profileId,
+                                profile_id: String(profileId),
                                 profile_name: profile ? profile.name : 'Unknown',
                                 upload_directory: directory,
                                 schedule_time: scheduleTime || null,
@@ -1047,7 +1047,9 @@
                 console.log('🔍 デバッグ: 探しているプロファイルID:', schedule.profile_id);
                 console.log('📋 デバッグ: スケジュール全体:', schedule);
                 
-                const profile = profiles.find(p => p.id === schedule.profile_id || p.id === String(schedule.profile_id));
+                // プロファイルIDを文字列に統一して比較
+                const profileIdStr = String(schedule.profile_id);
+                const profile = profiles.find(p => String(p.id) === profileIdStr);
                 if (!profile) {
                     console.error('❌ プロファイルが見つかりません:', schedule.profile_id);
                     console.error('利用可能なプロファイルID:', profiles.map(p => p.id));
