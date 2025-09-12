@@ -1173,6 +1173,20 @@
                             await loadSchedules();
                             await loadHistory();
                             await loadStats();  // 統計情報も更新
+                            
+                            // タブが履歴の場合、強制的に再描画
+                            const activeTab = document.querySelector('.tab-button.active');
+                            if (activeTab && activeTab.textContent.includes('履歴')) {
+                                console.log('📊 履歴タブがアクティブなので再描画');
+                                updateHistoryList(JSON.parse(localStorage.getItem('uploadHistory') || '[]'));
+                            }
+                            
+                            // タブが履歴の場合、強制的に再描画
+                            const activeTab = document.querySelector('.tab-button.active');
+                            if (activeTab && activeTab.textContent.includes('履歴')) {
+                                console.log('📊 履歴タブがアクティブなので再描画');
+                                updateHistoryList(JSON.parse(localStorage.getItem('uploadHistory') || '[]'));
+                            }
                         } else {
                             showToast(`スケジュール実行失敗: ${result.message}`, 'error');
                             
