@@ -1,0 +1,27 @@
+# バックエンド用Dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+# package.jsonをコピー
+COPY package*.json ./
+
+# 依存関係をインストール
+RUN npm ci --only=production
+
+# ソースコードをコピー
+COPY sftp-server.js ./
+COPY sftp-server-db.js ./
+COPY database/ ./database/
+COPY data/ ./data/
+
+# データディレクトリを作成
+RUN mkdir -p data/uploads data/temp-files
+
+# ヘルスチェック
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:8091/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
+
+EXPOSE 8091
+
+CMD ["node", "sftp-server-db.js"]

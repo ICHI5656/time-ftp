@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>FTP/SFTP接続テストツール</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .server-info {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        .loading {
+            color: #007bff;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 FTP/SFTP接続テストツール</h1>
+
+    <div class="test-card">
+        <h2>📁 FTPテストサーバー</h2>
+        <div class="server-info">
+            ホスト: ftp.dlptest.com<br>
+            ポート: 21<br>
+            ユーザー: dlpuser<br>
+            パスワード: rNrKYTX9g7z3RgJRmxWuGHbeu
+        </div>
+        <button onclick="testFTP()">FTP接続テスト</button>
+        <div id="ftp-result" class="result"></div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔒 SFTPテストサーバー (Rebex)</h2>
+        <div class="server-info">
+            ホスト: test.rebex.net<br>
+            ポート: 22<br>
+            ユーザー: demo<br>
+            パスワード: password
+        </div>
+        <button onclick="testSFTP()">SFTP接続テスト</button>
+        <div id="sftp-result" class="result"></div>
+    </div>
+
+    <div class="test-card">
+        <h2>🎯 APIサーバー状態</h2>
+        <button onclick="checkHealth()">ヘルスチェック</button>
+        <div id="health-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080';
+
+        async function testFTP() {
+            const resultDiv = document.getElementById('ftp-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '接続中...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/test-connection`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        host: 'ftp.dlptest.com',
+                        port: 21,
+                        username: 'dlpuser',
+                        password: 'rNrKYTX9g7z3RgJRmxWuGHbeu',
+                        protocol: 'ftp'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ 接続成功！</strong><br>
+                        ファイル数: ${data.details.fileCount}<br>
+                        サンプルファイル:<br>
+                        ${data.details.files.slice(0, 5).map(f => 
+                            `• ${f.name} (${f.type})`
+                        ).join('<br>')}
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <strong>❌ 接続失敗</strong><br>
+                        ${data.message}<br>
+                        ${data.error || ''}
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <strong>❌ エラー</strong><br>
+                    ${error.message}<br>
+                    APIサーバーが起動していることを確認してください。
+                `;
+            }
+        }
+
+        async function testSFTP() {
+            const resultDiv = document.getElementById('sftp-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '接続中...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/test-connection`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        host: 'test.rebex.net',
+                        port: 22,
+                        username: 'demo',
+                        password: 'password',
+                        protocol: 'sftp'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ 接続成功！</strong><br>
+                        ファイル数: ${data.details.fileCount}<br>
+                        サンプルファイル:<br>
+                        ${data.details.files.map(f => 
+                            `• ${f.name} (${f.type})`
+                        ).join('<br>')}<br>
+                        <em>※このサーバーは読み取り専用です</em>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <strong>❌ 接続失敗</strong><br>
+                        ${data.message}<br>
+                        ${data.error || ''}
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <strong>❌ エラー</strong><br>
+                    ${error.message}<br>
+                    APIサーバーが起動していることを確認してください。
+                `;
+            }
+        }
+
+        async function checkHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = 'チェック中...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/health`);
+                const data = await response.json();
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <strong>✅ サーバー正常稼働中</strong><br>
+                    状態: ${data.status}<br>
+                    Node.js: ${data.environment.node}<br>
+                    ポート: ${data.environment.port}<br>
+                    時刻: ${new Date(data.timestamp).toLocaleString('ja-JP')}
+                `;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <strong>❌ サーバー接続エラー</strong><br>
+                    ${error.message}<br>
+                    Dockerコンテナが起動していることを確認してください。<br>
+                    <code>docker-compose -f docker-compose.minimal.yml up -d</code>
+                `;
+            }
+        }
+
+        // ページ読み込み時にヘルスチェック
+        window.onload = () => {
+            checkHealth();
+        };
+    </script>
+</body>
+</html>

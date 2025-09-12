@@ -1,0 +1,82 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Push images to GHCR"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_OWNER: ${{ github.repository_owner }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: time-ftp-sftp
+            file: Dockerfile.sftp
+            context: .
+          - name: time-ftp
+            file: Dockerfile
+            context: .
+          - name: time-ftp-simple
+            file: Dockerfile.simple
+            context: .
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR (conditional)
+        if: github.event_name == 'workflow_dispatch' && inputs.publish == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute tags
+        id: meta
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ matrix.name }}"
+          SHA_TAG="${IMAGE}:sha-${GITHUB_SHA::7}"
+          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+          echo "sha_tag=${SHA_TAG}" >> $GITHUB_OUTPUT
+          if [[ "${GITHUB_REF}" == refs/heads/main || "${GITHUB_REF}" == refs/heads/master ]]; then
+            echo "latest_tag=${IMAGE}:latest" >> $GITHUB_OUTPUT
+          else
+            echo "latest_tag=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build (no push by default)
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == 'true' }}
+          tags: |
+            ${{ steps.meta.outputs.sha_tag }}
+            ${{ steps.meta.outputs.latest_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+

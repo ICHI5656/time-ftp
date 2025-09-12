@@ -1,0 +1,131 @@
+# Essential Files to Keep:
+index-db.html              # Main UI (database version)
+sftp-server.js             # Main backend server
+package.json               # Dependencies
+package-lock.json          # Lock file
+docker-compose.yml         # Docker config
+nginx.conf                 # Nginx config
+.env                       # Environment variables
+.gitignore                 # Git ignore
+README.md                  # Documentation
+CLAUDE.md                  # Claude instructions
+
+# Directories to Keep:
+backend/                   # Backend source (if needed for database version)
+data/                      # Data storage
+database/                  # Database files
+test-data/                 # Test CSV files (keep for testing)
+.git/                      # Git repository
+
+# Files to REMOVE:
+# Test and debug scripts:
+apply-all-fixes.js
+console-fix.js
+check-schedule-status.js
+debug-db.js
+directory-browse-fix.js
+emergency-fix.js
+final-directory-fix.js
+final-integration-test.js
+fix-all-browse-buttons.js
+fix-all-issues.js
+fix-api-endpoints.js
+fix-both-directories.js
+fix-connection-error.js
+fix-directory-browse-complete.js
+fix-directory-button-now.js
+fix-directory-field-update.js
+fix-directory-save-db.js
+fix-directory-selection.js
+fix-directory-sync.js
+fix-main-upload-directory.js
+fix-multi-server-complete.js
+fix-multi-server-schedule.js
+fix-password-issue.js
+fix-password-ui.js
+fix-profile-switching.js
+fix-save-default-directory.js
+fix-scheduled-uploads.js
+fix-server-selection-db.js
+fix-server-switch.js
+fix-server-sync.js
+fix-sidebar-browse.js
+fix-sidebar-directory.js
+fix-sidebar-memory.js
+fix-sidebar-server-switch.js
+fix-upload-errors.js
+fix-upload-log.js
+fix-yellow-button-8091.js
+fix-yellow-button-now.js
+force-fix-sidebar.js
+force-server-switch.js
+permanent-fix-system.js
+permanent-fix-yellow-button.js
+permanent-solution.js
+protect-profiles.js
+quick-fix.js
+save-directory-now.js
+save-directory-settings.js
+sftp-server-db.js
+start-local-test-servers.js
+test-ftp-server-enhanced.js
+test-multiple-upload.js
+test-sftp-connection.js
+test-sftp-upload.js
+ui-error-silencer.js
+
+# Test HTML files:
+auto-fix-loader.html
+clear-backend.html
+clear-schedule.html
+clear-storage.html
+fix-directory-browse.html
+fix-schedule.html
+fix-storage.html
+migrate-to-db.html
+test-app.html
+test-directory-browser.html
+test-localstorage.html
+test-schedule-queue.html
+test-schedule-system.html
+test-upload.html
+ultimate-ftp-manager-linked.html
+temp_index.html
+db-status.html
+
+# Old/Simple versions (not needed):
+index.html                 # Old non-database version
+Dockerfile.simple
+Dockerfile.minimal
+docker-compose.simple.yml
+docker-compose.minimal.yml
+
+# Temporary documentation (can be consolidated):
+FIX_SCHEDULE_ERROR.md
+SCHEDULE_UPLOAD_FIX.md
+TEST_SCHEDULE_UPLOAD.md
+TEST_INFO.md
+SFTP-FTP-TEST-SERVERS.md
+STARTUP_GUIDE.md
+FTP_CONNECTION_GUIDE.md
+TROUBLESHOOTING.md
+TROUBLESHOOT_REPORT.md
+ANALYSIS_REPORT.md
+FEATURE-LIST.md
+AGENTS.md
+CLAUDE_backup.md
+
+# Batch files (keep only essential ones):
+# Keep:
+# start-local.bat
+# stop-local.bat
+# docker-compose up/down related
+
+# Remove:
+build-local.bat
+rebuild-local-nocache.bat
+reset-backend-db.bat
+monitor-local.bat
+start-all.bat
+start-sftp-test.bat
+build.bat

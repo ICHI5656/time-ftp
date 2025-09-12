@@ -20,6 +20,7 @@ export const initDatabase = async () => {
         user TEXT NOT NULL,
         password TEXT NOT NULL,
         secure BOOLEAN DEFAULT 0,
+        protocol TEXT DEFAULT 'ftp',
         default_directory TEXT DEFAULT '/',
         is_active BOOLEAN DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -54,6 +55,52 @@ export const initDatabase = async () => {
       // Column already exists, ignore
     }
 
+    // Add protocol column to ftp_connections if it doesn't exist (migration)
+    try {
+      db.exec(`ALTER TABLE ftp_connections ADD COLUMN protocol TEXT DEFAULT 'ftp'`);
+    } catch (error) {
+      // Column already exists, ignore
+    }
+
+    // Fix upload_history table constraint (migration) - make schedule_id nullable
+    try {
+      // Check if we need to recreate the table
+      const tableInfo = db.prepare("PRAGMA table_info(upload_history)").all() as any[];
+      const scheduleIdColumn = tableInfo.find(col => col.name === 'schedule_id');
+      
+      if (scheduleIdColumn && scheduleIdColumn.notnull === 1) {
+        // Need to recreate table with nullable schedule_id
+        db.exec(`
+          BEGIN TRANSACTION;
+          CREATE TABLE upload_history_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            schedule_id INTEGER,
+            ftp_connection_id INTEGER NOT NULL,
+            file_name TEXT NOT NULL,
+            file_size INTEGER,
+            source_path TEXT,
+            target_path TEXT,
+            upload_status TEXT NOT NULL,
+            error_message TEXT,
+            retry_count INTEGER DEFAULT 0,
+            started_at DATETIME,
+            completed_at DATETIME,
+            duration_ms INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (schedule_id) REFERENCES upload_schedules (id) ON DELETE SET NULL,
+            FOREIGN KEY (ftp_connection_id) REFERENCES ftp_connections (id) ON DELETE CASCADE
+          );
+          INSERT INTO upload_history_new SELECT * FROM upload_history;
+          DROP TABLE upload_history;
+          ALTER TABLE upload_history_new RENAME TO upload_history;
+          COMMIT;
+        `);
+      }
+    } catch (error) {
+      // Migration failed or not needed, continue
+      console.log('Upload history table migration skipped:', error);
+    }
+
     // Create file queue table
     db.exec(`
       CREATE TABLE IF NOT EXISTS file_queue (
@@ -76,7 +123,7 @@ export const initDatabase = async () => {
     db.exec(`
       CREATE TABLE IF NOT EXISTS upload_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        schedule_id INTEGER NOT NULL,
+        schedule_id INTEGER,
         ftp_connection_id INTEGER NOT NULL,
         file_name TEXT NOT NULL,
         file_size INTEGER,
@@ -123,8 +170,8 @@ export const getAllFtpConnections = () => {
 
 export const createFtpConnection = (data: any) => {
   const stmt = db.prepare(`
-    INSERT INTO ftp_connections (name, host, port, user, password, secure, default_directory)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO ftp_connections (name, host, port, user, password, secure, protocol, default_directory)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const result = stmt.run(
     data.name,
@@ -133,6 +180,7 @@ export const createFtpConnection = (data: any) => {
     data.user,
     data.password,
     data.secure ? 1 : 0,  // Convert boolean to integer
+    data.protocol && typeof data.protocol === 'string' ? data.protocol : (data.secure ? 'ftps' : 'ftp'),
     data.default_directory || '/'
   );
   return result.lastInsertRowid;

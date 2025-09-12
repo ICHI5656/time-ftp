@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  node-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # Backend
+      - name: Install backend deps
+        working-directory: backend
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+      - name: Lint backend
+        working-directory: backend
+        run: npm run lint --if-present
+
+      - name: Typecheck/Build backend
+        working-directory: backend
+        run: npm run build --if-present
+
+      - name: Test backend (pass if no tests)
+        working-directory: backend
+        run: npx jest --passWithNoTests --runInBand
+
+      # Frontend
+      - name: Install frontend deps
+        working-directory: frontend
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+      - name: Lint frontend
+        working-directory: frontend
+        run: npm run lint --if-present
+
+      - name: Typecheck/Build frontend
+        working-directory: frontend
+        run: npm run build --if-present
+

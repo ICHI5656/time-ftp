@@ -10,7 +10,7 @@ const router = Router();
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../../../data/uploads');
+    const uploadDir = path.join(__dirname, '../../../data/uploads');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -25,12 +25,17 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   fileFilter: (req, file, cb) => {
-    // Only allow CSV files
-    if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only CSV files are allowed'));
-    }
+    // Allow common text/data types (CSV, XML, TXT, HTML, ZIP)
+    const allowedExt = ['.csv', '.xml', '.txt', '.zip', '.html', '.htm'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowedExt.includes(ext)) return cb(null, true);
+    // Fallback by mimetype
+    const okTypes = [
+      'text/csv', 'text/plain', 'application/zip', 'application/x-zip-compressed',
+      'text/html', 'application/xml', 'text/xml'
+    ];
+    if (okTypes.includes(file.mimetype)) return cb(null, true);
+    cb(new Error('Only CSV, XML, TXT, HTML, ZIP files are allowed'));
   },
   limits: {
     fileSize: 500 * 1024 * 1024 // 500MB limit
@@ -127,7 +132,7 @@ router.get('/statistics', async (req: Request, res: Response) => {
         SUM(file_size) as total_bytes_uploaded,
         AVG(duration_ms) as avg_upload_duration_ms
       FROM upload_history
-      WHERE created_at >= datetime('now', '-30 days')
+      WHERE created_at >= datetime('now', '-60 days')
     `).get();
 
     const recentUploads = db.prepare(`
@@ -204,7 +209,7 @@ router.delete('/queue/:scheduleId', async (req: Request, res: Response) => {
 // List uploaded files
 router.get('/files', async (req: Request, res: Response) => {
   try {
-    const uploadDir = path.join(__dirname, '../../../../data/uploads');
+    const uploadDir = path.join(__dirname, '../../../data/uploads');
     
     if (!fs.existsSync(uploadDir)) {
       return res.json([]);
@@ -235,7 +240,7 @@ router.get('/files', async (req: Request, res: Response) => {
 router.delete('/files/:filename', async (req: Request, res: Response) => {
   try {
     const filename = req.params.filename;
-    const filePath = path.join(__dirname, '../../../../data/uploads', filename);
+    const filePath = path.join(__dirname, '../../../data/uploads', filename);
 
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'File not found' });

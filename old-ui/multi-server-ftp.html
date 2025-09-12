@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マルチサーバーFTP管理システム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .content {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .server-list {
+            margin-bottom: 20px;
+        }
+
+        .server-item {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .server-item:hover {
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .server-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .server-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .server-info {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .server-status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #dc3545;
+        }
+
+        .server-status.connected {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+
+        .add-server-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .add-server-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .server-form {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .server-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            font-size: 0.95em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .file-type-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .file-type-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .file-type-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .csv-icon {
+            background: #28a745;
+            color: white;
+        }
+
+        .html-icon {
+            background: #fd7e14;
+            color: white;
+        }
+
+        .file-type-title {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .upload-area {
+            background: #f8f9fa;
+            border: 3px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f0f3ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #e8ecff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .file-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .file-item {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            margin-right: 15px;
+        }
+
+        .file-details {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .file-meta {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        .server-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+
+        .schedule-section {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .schedule-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .schedule-icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .datetime-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .datetime-input input {
+            flex: 1;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .close-modal {
+            float: right;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 8px;
+            padding: 15px 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            display: none;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .toast.show {
+            display: flex;
+        }
+
+        .toast.success {
+            border-left: 5px solid #28a745;
+        }
+
+        .toast.error {
+            border-left: 5px solid #dc3545;
+        }
+
+        .toast-icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 マルチサーバーFTP管理システム</h1>
+        
+        <div class="main-grid">
+            <!-- サーバー管理サイドバー -->
+            <div class="sidebar">
+                <h2 style="margin-bottom: 20px;">📡 サーバー設定</h2>
+                
+                <div class="server-list" id="serverList">
+                    <!-- サーバーリストはJavaScriptで動的に生成 -->
+                </div>
+                
+                <button class="add-server-btn" onclick="showServerForm()">
+                    ➕ 新しいサーバーを追加
+                </button>
+                
+                <div class="server-form" id="serverForm">
+                    <h3 style="margin-bottom: 15px;">サーバー設定</h3>
+                    
+                    <div class="form-group">
+                        <label>サーバー名</label>
+                        <input type="text" id="serverName" placeholder="例: 楽天メインサーバー">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>ホスト</label>
+                        <input type="text" id="serverHost" placeholder="例: upload.rakuten.ne.jp">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>プロトコル</label>
+                        <select id="serverProtocol">
+                            <option value="sftp">SFTP</option>
+                            <option value="ftp">FTP</option>
+                            <option value="ftps">FTPS</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>ポート</label>
+                        <input type="number" id="serverPort" value="22">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>ユーザー名</label>
+                        <input type="text" id="serverUsername">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>パスワード</label>
+                        <input type="password" id="serverPassword">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>アップロードディレクトリ</label>
+                        <input type="text" id="serverDirectory" placeholder="例: /cabinet/images/">
+                    </div>
+                    
+                    <div class="file-type-section">
+                        <h4 style="margin-bottom: 10px;">📁 対応ファイルタイプ</h4>
+                        
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="supportCsv" checked>
+                            <label for="supportCsv">CSV ファイル（商品データ更新）</label>
+                        </div>
+                        
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="supportHtml" checked>
+                            <label for="supportHtml">HTML ファイル（ページ更新）</label>
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="saveServer()">保存</button>
+                        <button class="btn btn-danger" onclick="hideServerForm()">キャンセル</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- メインコンテンツ -->
+            <div class="content">
+                <div id="noServerMessage" style="text-align: center; padding: 50px; color: #6c757d;">
+                    <div style="font-size: 4em; margin-bottom: 20px;">📡</div>
+                    <h2>サーバーを選択してください</h2>
+                    <p>左側のサーバーリストから接続するサーバーを選択するか、<br>新しいサーバーを追加してください。</p>
+                </div>
+                
+                <div id="serverContent" style="display: none;">
+                    <h2 id="selectedServerName" style="margin-bottom: 20px;">サーバー名</h2>
+                    
+                    <!-- ファイルタイプ別アップロードセクション -->
+                    <div class="file-type-section">
+                        <div class="file-type-header">
+                            <div class="file-type-icon csv-icon">📊</div>
+                            <div>
+                                <div class="file-type-title">CSV ファイル</div>
+                                <div style="font-size: 0.9em; color: #6c757d;">商品データの一括更新</div>
+                            </div>
+                        </div>
+                        
+                        <div class="upload-area" id="csvUploadArea" ondrop="handleDrop(event, 'csv')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                            <div class="upload-icon">📤</div>
+                            <div>CSVファイルをドラッグ&ドロップ</div>
+                            <div style="margin-top: 10px;">
+                                <input type="file" id="csvFileInput" accept=".csv" multiple style="display: none;" onchange="handleFileSelect(event, 'csv')">
+                                <button class="btn btn-primary" onclick="document.getElementById('csvFileInput').click()">ファイルを選択</button>
+                            </div>
+                        </div>
+                        
+                        <div class="schedule-section">
+                            <div class="schedule-header">
+                                <div class="schedule-icon">⏰</div>
+                                <div>
+                                    <strong>スケジュール設定</strong>
+                                    <div style="font-size: 0.9em; color: #856404;">デフォルト: 一回限りのアップロード</div>
+                                </div>
+                            </div>
+                            
+                            <div class="datetime-input">
+                                <input type="date" id="csvDate">
+                                <input type="time" id="csvTime">
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="csvBatch">
+                                <label for="csvBatch">複数ファイルをまとめてスケジュール</label>
+                            </div>
+                        </div>
+                        
+                        <div class="file-list" id="csvFileList">
+                            <!-- CSVファイルリスト -->
+                        </div>
+                    </div>
+                    
+                    <div class="file-type-section">
+                        <div class="file-type-header">
+                            <div class="file-type-icon html-icon">🌐</div>
+                            <div>
+                                <div class="file-type-title">HTML ファイル</div>
+                                <div style="font-size: 0.9em; color: #6c757d;">ウェブページの更新</div>
+                            </div>
+                        </div>
+                        
+                        <div class="upload-area" id="htmlUploadArea" ondrop="handleDrop(event, 'html')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                            <div class="upload-icon">📤</div>
+                            <div>HTMLファイルをドラッグ&ドロップ</div>
+                            <div style="margin-top: 10px;">
+                                <input type="file" id="htmlFileInput" accept=".html,.htm" multiple style="display: none;" onchange="handleFileSelect(event, 'html')">
+                                <button class="btn btn-primary" onclick="document.getElementById('htmlFileInput').click()">ファイルを選択</button>
+                            </div>
+                        </div>
+                        
+                        <div class="schedule-section" style="background: #d1ecf1; border-color: #17a2b8;">
+                            <div class="schedule-header">
+                                <div class="schedule-icon">⚡</div>
+                                <div>
+                                    <strong>アップロード設定</strong>
+                                    <div style="font-size: 0.9em; color: #0c5460;">デフォルト: 即時アップロード</div>
+                                </div>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="htmlSchedule">
+                                <label for="htmlSchedule">スケジュール設定を有効にする</label>
+                            </div>
+                            
+                            <div class="datetime-input" id="htmlScheduleInputs" style="display: none;">
+                                <input type="date" id="htmlDate">
+                                <input type="time" id="htmlTime">
+                            </div>
+                        </div>
+                        
+                        <div class="file-list" id="htmlFileList">
+                            <!-- HTMLファイルリスト -->
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-success" onclick="uploadFiles()">
+                            🚀 アップロード実行
+                        </button>
+                        <button class="btn btn-primary" onclick="testConnection()">
+                            🔌 接続テスト
+                        </button>
+                        <button class="btn btn-danger" onclick="clearFiles()">
+                            🗑️ クリア
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- トースト通知 -->
+    <div class="toast" id="toast">
+        <div class="toast-icon" id="toastIcon"></div>
+        <div id="toastMessage"></div>
+    </div>
+    
+    <script>
+        // グローバル変数
+        let servers = [];
+        let selectedServer = null;
+        let csvFiles = [];
+        let htmlFiles = [];
+        
+        // 初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadServers();
+            setupEventListeners();
+        });
+        
+        // イベントリスナーの設定
+        function setupEventListeners() {
+            document.getElementById('htmlSchedule').addEventListener('change', (e) => {
+                document.getElementById('htmlScheduleInputs').style.display = 
+                    e.target.checked ? 'flex' : 'none';
+            });
+        }
+        
+        // サーバーリストの読み込み
+        function loadServers() {
+            const savedServers = localStorage.getItem('ftpServers');
+            if (savedServers) {
+                servers = JSON.parse(savedServers);
+                renderServerList();
+            }
+        }
+        
+        // サーバーリストの描画
+        function renderServerList() {
+            const serverList = document.getElementById('serverList');
+            serverList.innerHTML = '';
+            
+            servers.forEach((server, index) => {
+                const serverItem = document.createElement('div');
+                serverItem.className = 'server-item';
+                serverItem.onclick = () => selectServer(index);
+                
+                // ファイルタイプアイコン
+                let fileTypeIcons = '';
+                if (server.supportCsv) fileTypeIcons += '📊 ';
+                if (server.supportHtml) fileTypeIcons += '🌐 ';
+                
+                serverItem.innerHTML = `
+                    <div class="server-status ${server.connected ? 'connected' : ''}"></div>
+                    <div class="server-name">${server.name}</div>
+                    <div class="server-info">
+                        ${server.host}:${server.port} (${server.protocol.toUpperCase()})<br>
+                        対応: ${fileTypeIcons}
+                    </div>
+                `;
+                
+                serverList.appendChild(serverItem);
+            });
+        }
+        
+        // サーバー選択
+        function selectServer(index) {
+            selectedServer = servers[index];
+            
+            // アクティブ状態の更新
+            document.querySelectorAll('.server-item').forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+            
+            // コンテンツの表示
+            document.getElementById('noServerMessage').style.display = 'none';
+            document.getElementById('serverContent').style.display = 'block';
+            document.getElementById('selectedServerName').textContent = selectedServer.name;
+            
+            // ファイルタイプセクションの表示/非表示
+            const csvSection = document.querySelector('.file-type-section:nth-of-type(1)');
+            const htmlSection = document.querySelector('.file-type-section:nth-of-type(2)');
+            
+            if (csvSection && selectedServer.supportCsv !== undefined) {
+                csvSection.style.display = selectedServer.supportCsv ? 'block' : 'none';
+            }
+            if (htmlSection && selectedServer.supportHtml !== undefined) {
+                htmlSection.style.display = selectedServer.supportHtml ? 'block' : 'none';
+            }
+        }
+        
+        // サーバーフォームの表示
+        function showServerForm() {
+            document.getElementById('serverForm').classList.add('active');
+        }
+        
+        // サーバーフォームの非表示
+        function hideServerForm() {
+            document.getElementById('serverForm').classList.remove('active');
+            clearServerForm();
+        }
+        
+        // サーバーフォームのクリア
+        function clearServerForm() {
+            document.getElementById('serverName').value = '';
+            document.getElementById('serverHost').value = '';
+            document.getElementById('serverProtocol').value = 'sftp';
+            document.getElementById('serverPort').value = '22';
+            document.getElementById('serverUsername').value = '';
+            document.getElementById('serverPassword').value = '';
+            document.getElementById('serverDirectory').value = '';
+            document.getElementById('supportCsv').checked = true;
+            document.getElementById('supportHtml').checked = true;
+        }
+        
+        // サーバー保存
+        function saveServer() {
+            const server = {
+                name: document.getElementById('serverName').value,
+                host: document.getElementById('serverHost').value,
+                protocol: document.getElementById('serverProtocol').value,
+                port: document.getElementById('serverPort').value,
+                username: document.getElementById('serverUsername').value,
+                password: document.getElementById('serverPassword').value,
+                directory: document.getElementById('serverDirectory').value,
+                supportCsv: document.getElementById('supportCsv').checked,
+                supportHtml: document.getElementById('supportHtml').checked,
+                connected: false
+            };
+            
+            if (!server.name || !server.host || !server.username) {
+                showToast('必須項目を入力してください', 'error');
+                return;
+            }
+            
+            servers.push(server);
+            localStorage.setItem('ftpServers', JSON.stringify(servers));
+            renderServerList();
+            hideServerForm();
+            showToast('サーバーを追加しました', 'success');
+        }
+        
+        // ドラッグ&ドロップハンドラー
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('dragover');
+        }
+        
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('dragover');
+        }
+        
+        function handleDrop(event, fileType) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('dragover');
+            
+            const files = Array.from(event.dataTransfer.files);
+            processFiles(files, fileType);
+        }
+        
+        // ファイル選択ハンドラー
+        function handleFileSelect(event, fileType) {
+            const files = Array.from(event.target.files);
+            processFiles(files, fileType);
+        }
+        
+        // ファイル処理
+        function processFiles(files, fileType) {
+            if (!selectedServer) {
+                showToast('サーバーを選択してください', 'error');
+                return;
+            }
+            
+            files.forEach(file => {
+                const fileObj = {
+                    name: file.name,
+                    size: file.size,
+                    type: fileType,
+                    server: selectedServer.name,
+                    file: file
+                };
+                
+                if (fileType === 'csv') {
+                    csvFiles.push(fileObj);
+                } else {
+                    htmlFiles.push(fileObj);
+                }
+            });
+            
+            renderFileList(fileType);
+            showToast(`${files.length}個のファイルを追加しました`, 'success');
+        }
+        
+        // ファイルリストの描画
+        function renderFileList(fileType) {
+            const listId = fileType === 'csv' ? 'csvFileList' : 'htmlFileList';
+            const fileList = document.getElementById(listId);
+            const files = fileType === 'csv' ? csvFiles : htmlFiles;
+            
+            fileList.innerHTML = '';
+            
+            files.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                
+                const iconColor = fileType === 'csv' ? '#28a745' : '#fd7e14';
+                const icon = fileType === 'csv' ? '📊' : '🌐';
+                
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <div class="file-icon" style="background: ${iconColor}; color: white;">
+                            ${icon}
+                        </div>
+                        <div class="file-details">
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-meta">
+                                ${formatFileSize(file.size)}
+                                <span class="server-badge">${file.server}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger" style="padding: 5px 10px;" onclick="removeFile('${fileType}', ${index})">
+                        削除
+                    </button>
+                `;
+                
+                fileList.appendChild(fileItem);
+            });
+        }
+        
+        // ファイル削除
+        function removeFile(fileType, index) {
+            if (fileType === 'csv') {
+                csvFiles.splice(index, 1);
+            } else {
+                htmlFiles.splice(index, 1);
+            }
+            renderFileList(fileType);
+        }
+        
+        // ファイルサイズのフォーマット
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        // 接続テスト
+        async function testConnection() {
+            if (!selectedServer) {
+                showToast('サーバーを選択してください', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/test-connection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        host: selectedServer.host,
+                        port: parseInt(selectedServer.port),
+                        username: selectedServer.username,
+                        password: selectedServer.password,
+                        protocol: selectedServer.protocol
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    selectedServer.connected = true;
+                    servers[servers.indexOf(selectedServer)] = selectedServer;
+                    localStorage.setItem('ftpServers', JSON.stringify(servers));
+                    renderServerList();
+                    showToast('接続成功！', 'success');
+                } else {
+                    showToast('接続失敗: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showToast('接続エラー: ' + error.message, 'error');
+            }
+        }
+        
+        // ファイルアップロード
+        async function uploadFiles() {
+            if (!selectedServer) {
+                showToast('サーバーを選択してください', 'error');
+                return;
+            }
+            
+            if (csvFiles.length === 0 && htmlFiles.length === 0) {
+                showToast('アップロードするファイルがありません', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            
+            // サーバー情報
+            formData.append('server', JSON.stringify({
+                host: selectedServer.host,
+                port: parseInt(selectedServer.port),
+                username: selectedServer.username,
+                password: selectedServer.password,
+                protocol: selectedServer.protocol,
+                directory: selectedServer.directory
+            }));
+            
+            // CSVファイル
+            csvFiles.forEach(file => {
+                formData.append('files', file.file);
+                formData.append(`schedule_${file.name}`, JSON.stringify({
+                    date: document.getElementById('csvDate').value,
+                    time: document.getElementById('csvTime').value,
+                    batch: document.getElementById('csvBatch').checked
+                }));
+            });
+            
+            // HTMLファイル
+            htmlFiles.forEach(file => {
+                formData.append('files', file.file);
+                if (document.getElementById('htmlSchedule').checked) {
+                    formData.append(`schedule_${file.name}`, JSON.stringify({
+                        date: document.getElementById('htmlDate').value,
+                        time: document.getElementById('htmlTime').value
+                    }));
+                }
+            });
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('アップロード成功！', 'success');
+                    clearFiles();
+                } else {
+                    showToast('アップロード失敗: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showToast('アップロードエラー: ' + error.message, 'error');
+            }
+        }
+        
+        // ファイルクリア
+        function clearFiles() {
+            csvFiles = [];
+            htmlFiles = [];
+            document.getElementById('csvFileList').innerHTML = '';
+            document.getElementById('htmlFileList').innerHTML = '';
+            document.getElementById('csvFileInput').value = '';
+            document.getElementById('htmlFileInput').value = '';
+            showToast('ファイルをクリアしました', 'success');
+        }
+        
+        // トースト通知
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toast.className = `toast show ${type}`;
+            toastIcon.textContent = type === 'success' ? '✅' : '❌';
+            toastMessage.textContent = message;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

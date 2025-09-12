@@ -1,0 +1,3336 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>楽天FTP Ultimate Manager - 統合版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #bf0000;
+            --secondary: #f5f5f5;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --dark: #333;
+            --light: #f8f9fa;
+            --border: #dee2e6;
+            --shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        /* Dark mode variables */
+        [data-theme="dark"] {
+            --primary: #ff3333;
+            --secondary: #2a2a2a;
+            --dark: #f0f0f0;
+            --light: #1a1a1a;
+            --border: #404040;
+            --shadow: 0 5px 20px rgba(255,255,255,0.1);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            transition: all 0.3s;
+        }
+        
+        [data-theme="dark"] body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        }
+        
+        /* Header Styles */
+        .header {
+            background: white;
+            box-shadow: var(--shadow);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+        
+        [data-theme="dark"] .header {
+            background: #2a2a2a;
+        }
+        
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .logo-text h1 {
+            font-size: 24px;
+            color: var(--dark);
+            font-weight: 700;
+        }
+        
+        .logo-text p {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .theme-toggle {
+            width: 50px;
+            height: 25px;
+            background: var(--border);
+            border-radius: 25px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .theme-toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 21px;
+            height: 21px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        [data-theme="dark"] .theme-toggle-slider {
+            transform: translateX(25px);
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: var(--light);
+            border-radius: 25px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--danger);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.connected {
+            background: var(--success);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Main Container */
+        .container {
+            max-width: 1600px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 30px;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+        }
+        
+        [data-theme="dark"] .card {
+            background: #2a2a2a;
+        }
+        
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: var(--light);
+            color: var(--dark);
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(191, 0, 0, 0.1);
+        }
+        
+        /* Button Styles */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #9f0000;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(191, 0, 0, 0.3);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-info {
+            background: var(--info);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+        }
+        
+        /* Main Content Area */
+        .main-content {
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        
+        [data-theme="dark"] .main-content {
+            background: #2a2a2a;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: var(--light);
+            border-bottom: 2px solid var(--border);
+        }
+        
+        .tab {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .tab.active {
+            color: var(--primary);
+            background: white;
+        }
+        
+        [data-theme="dark"] .tab.active {
+            background: #2a2a2a;
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+        }
+        
+        .tab:hover {
+            color: var(--primary);
+        }
+        
+        .tab-content {
+            padding: 30px;
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Upload Area */
+        .upload-area {
+            border: 3px dashed var(--border);
+            border-radius: 15px;
+            padding: 60px 30px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: var(--light);
+            margin-bottom: 30px;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: white;
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(191, 0, 0, 0.05);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        
+        /* File List */
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: var(--light);
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        
+        .file-item:hover {
+            background: white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transform: translateX(5px);
+        }
+        
+        [data-theme="dark"] .file-item:hover {
+            background: #333;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .file-details h4 {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+        
+        .file-details p {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        /* Schedule Card */
+        .schedule-card {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s;
+        }
+        
+        .schedule-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .schedule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .schedule-title {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .schedule-status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .schedule-status.active {
+            background: var(--success);
+            color: white;
+        }
+        
+        .schedule-status.paused {
+            background: var(--warning);
+            color: white;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 25px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .stat-card h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .stat-change {
+            font-size: 12px;
+            color: var(--success);
+            margin-top: 5px;
+        }
+        
+        .stat-change.negative {
+            color: var(--danger);
+        }
+        
+        /* Remote Files Grid */
+        .remote-files {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .remote-file {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .remote-file:hover {
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-3px);
+        }
+        
+        [data-theme="dark"] .remote-file:hover {
+            background: #333;
+        }
+        
+        .remote-file-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        
+        .remote-file.folder .remote-file-icon {
+            color: var(--warning);
+        }
+        
+        .remote-file.file .remote-file-icon {
+            color: var(--primary);
+        }
+        
+        /* Progress Bar */
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: var(--light);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--danger));
+            border-radius: 15px;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s;
+            z-index: 2000;
+        }
+        
+        .notification.success {
+            background: var(--success);
+        }
+        
+        .notification.error {
+            background: var(--danger);
+        }
+        
+        .notification.info {
+            background: var(--info);
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(400px); }
+            to { transform: translateX(0); }
+        }
+        
+        /* Loading Spinner */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Connection Profiles */
+        .profile-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        
+        .profile-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: var(--light);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .profile-item:hover {
+            background: white;
+            transform: translateX(5px);
+        }
+        
+        .profile-item.selected {
+            border: 2px solid var(--primary);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .tabs {
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+        }
+        
+        /* 自動実行トグルスイッチのスタイル */
+        .auto-execute-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .auto-execute-slider {
+            background-color: #4CAF50;
+        }
+        
+        input:checked + .auto-execute-slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">楽</div>
+                <div class="logo-text">
+                    <h1>楽天FTP Ultimate Manager</h1>
+                    <p>統合版 - 全機能搭載</p>
+                </div>
+            </div>
+            <div class="header-controls">
+                <div class="theme-toggle" onclick="toggleTheme()">
+                    <div class="theme-toggle-slider"></div>
+                </div>
+                <div class="connection-status">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">未接続</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="dashboard">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <!-- Connection Profiles -->
+                <div class="card">
+                    <h2>👤 接続プロファイル</h2>
+                    <div class="profile-list" id="profileList">
+                        <div class="profile-item selected">
+                            <span>楽天メイン (SFTP)</span>
+                            <button class="btn btn-sm" onclick="editProfile(0)">編集</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-info" onclick="addProfile()">
+                        ➕ 新規プロファイル
+                    </button>
+                </div>
+                
+                <!-- Connection Settings -->
+                <div class="card">
+                    <h2>🔌 接続設定</h2>
+                    <form id="connectionForm">
+                        <div class="form-group">
+                            <label>プロトコル</label>
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <label class="protocol-option" style="
+                                    display: flex; 
+                                    align-items: center; 
+                                    padding: 10px 15px; 
+                                    border: 2px solid #e0e0e0; 
+                                    border-radius: 8px; 
+                                    cursor: pointer;
+                                    background: white;
+                                    transition: all 0.2s;
+                                    flex: 1;
+                                ">
+                                    <input type="radio" name="protocol" value="sftp" id="proto-sftp" 
+                                           onchange="selectProtocol('sftp')" checked
+                                           style="margin-right: 8px;">
+                                    <span style="font-weight: 600; color: #4caf50;">SFTP</span>
+                                    <small style="margin-left: auto; color: #666;">推奨</small>
+                                </label>
+                                <label class="protocol-option" style="
+                                    display: flex; 
+                                    align-items: center; 
+                                    padding: 10px 15px; 
+                                    border: 2px solid #e0e0e0; 
+                                    border-radius: 8px; 
+                                    cursor: pointer;
+                                    background: white;
+                                    transition: all 0.2s;
+                                    flex: 1;
+                                ">
+                                    <input type="radio" name="protocol" value="ftp" id="proto-ftp"
+                                           onchange="selectProtocol('ftp')"
+                                           style="margin-right: 8px;">
+                                    <span style="font-weight: 600;">FTP</span>
+                                </label>
+                                <label class="protocol-option" style="
+                                    display: flex; 
+                                    align-items: center; 
+                                    padding: 10px 15px; 
+                                    border: 2px solid #e0e0e0; 
+                                    border-radius: 8px; 
+                                    cursor: pointer;
+                                    background: white;
+                                    transition: all 0.2s;
+                                    flex: 1;
+                                ">
+                                    <input type="radio" name="protocol" value="ftps" id="proto-ftps"
+                                           onchange="selectProtocol('ftps')"
+                                           style="margin-right: 8px;">
+                                    <span style="font-weight: 600;">FTPS</span>
+                                </label>
+                            </div>
+                            <select id="protocol" style="display: none;" onchange="updateProtocol()">
+                                <option value="sftp">SFTP (推奨)</option>
+                                <option value="ftp">FTP</option>
+                                <option value="ftps">FTPS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>ホスト</label>
+                            <input type="text" id="host" value="upload.rakuten.ne.jp">
+                        </div>
+                        <div class="form-group">
+                            <label>ポート</label>
+                            <input type="number" id="port" value="22">
+                        </div>
+                        <div class="form-group">
+                            <label>ユーザー名</label>
+                            <input type="text" id="username" value="amicoco" required>
+                        </div>
+                        <div class="form-group">
+                            <label>パスワード</label>
+                            <input type="password" id="password" placeholder="パスワードを入力" autocomplete="new-password">
+                        </div>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary" onclick="testConnection()">
+                                🔍 テスト
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="connectToServerFromForm()">
+                                🔗 接続
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="card">
+                    <h2>📊 クイック統計</h2>
+                    <div class="stat-card">
+                        <h3>今日のアップロード</h3>
+                        <div class="stat-value" id="todayUploads">0</div>
+                        <div class="stat-change">+0% 前日比</div>
+                    </div>
+                    <div class="stat-card" style="margin-top: 15px;">
+                        <h3>アクティブスケジュール</h3>
+                        <div class="stat-value" id="activeSchedules">0</div>
+                        <div class="stat-change">次回実行: --:--</div>
+                    </div>
+                </div>
+            </aside>
+            
+            <!-- Main Content -->
+            <main class="main-content">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('upload')">
+                        📤 アップロード
+                    </button>
+                    <button class="tab" onclick="switchTab('schedule')">
+                        📅 スケジュール
+                    </button>
+                    <button class="tab" onclick="switchTab('browse')">
+                        📁 ファイル管理
+                    </button>
+                    <button class="tab" onclick="switchTab('history')">
+                        📜 履歴
+                    </button>
+                    <button class="tab" onclick="switchTab('csv')">
+                        📊 CSV管理
+                    </button>
+                    <button class="tab" onclick="switchTab('settings')">
+                        ⚙️ 設定
+                    </button>
+                </div>
+                
+                <!-- Upload Tab -->
+                <div id="uploadTab" class="tab-content active">
+                    <h2 style="margin-bottom: 20px;">ファイルアップロード</h2>
+                    
+                    <div class="upload-area" 
+                         onclick="document.getElementById('fileInput').click()" 
+                         ondrop="handleDrop(event)" 
+                         ondragover="handleDragOver(event)" 
+                         ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">
+                            <h3>ファイルをドラッグ＆ドロップ</h3>
+                            <p>または クリックしてファイルを選択</p>
+                            <p style="margin-top: 10px; font-size: 12px; color: #999;">
+                                対応形式: CSV, TXT, XML, ZIP | 最大サイズ: 100MB
+                            </p>
+                        </div>
+                        <input type="file" id="fileInput" multiple 
+                               accept=".csv,.txt,.xml,.zip" 
+                               style="display: none;" 
+                               onchange="handleFileSelect(event)">
+                    </div>
+                    
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%">
+                                0%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin: 30px 0 15px;">選択されたファイル</h3>
+                    <div class="file-list" id="fileList">
+                        <p style="text-align: center; color: #666; padding: 40px;">
+                            ファイルが選択されていません
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Schedule Tab -->
+                <div id="scheduleTab" class="tab-content">
+                    <h2 style="margin-bottom: 20px;">スケジュール管理</h2>
+                    
+                    <!-- 自動実行ON/OFFスイッチ -->
+                    <div style="
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border-radius: 12px;
+                        padding: 20px;
+                        margin-bottom: 20px;
+                        color: white;
+                    ">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <h3 style="margin: 0; font-size: 18px;">🤖 自動実行モード</h3>
+                                <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">
+                                    スケジュールに従って自動的にサーバーに接続し、ファイルをアップロードします
+                                </p>
+                            </div>
+                            <label style="
+                                position: relative;
+                                display: inline-block;
+                                width: 60px;
+                                height: 34px;
+                            ">
+                                <input type="checkbox" id="autoExecuteToggle" 
+                                       onchange="toggleAutoExecution()"
+                                       style="opacity: 0; width: 0; height: 0;">
+                                <span style="
+                                    position: absolute;
+                                    cursor: pointer;
+                                    top: 0;
+                                    left: 0;
+                                    right: 0;
+                                    bottom: 0;
+                                    background-color: #ccc;
+                                    transition: .4s;
+                                    border-radius: 34px;
+                                " class="auto-execute-slider"></span>
+                            </label>
+                        </div>
+                        <div id="autoExecuteStatus" style="
+                            margin-top: 15px;
+                            padding: 10px;
+                            background: rgba(255,255,255,0.1);
+                            border-radius: 8px;
+                            font-size: 14px;
+                        ">
+                            <span id="autoExecuteStatusText">⏸️ 自動実行は停止中です</span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="showScheduleModal()">
+                        ➕ 新規スケジュール作成
+                    </button>
+                    
+                    <h3 style="margin: 30px 0 15px;">アクティブスケジュール</h3>
+                    <div id="scheduleList">
+                        <div class="schedule-card">
+                            <div class="schedule-header">
+                                <div>
+                                    <div class="schedule-title">商品データ更新</div>
+                                    <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                                        毎日 09:00 実行 | 次回: 2024/01/15 09:00
+                                    </p>
+                                </div>
+                                <div>
+                                    <span class="schedule-status active">有効</span>
+                                </div>
+                            </div>
+                            <div style="margin-top: 10px;">
+                                <button class="btn btn-sm btn-warning" onclick="pauseSchedule(1)">
+                                    ⏸️ 一時停止
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteSchedule(1)">
+                                    🗑️ 削除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Browse Tab -->
+                <div id="browseTab" class="tab-content">
+                    <h2 style="margin-bottom: 20px;">リモートファイル管理</h2>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button class="btn btn-primary" onclick="refreshRemoteFiles()">
+                            🔄 更新
+                        </button>
+                        <button class="btn btn-info" onclick="createFolder()">
+                            📁 新規フォルダ
+                        </button>
+                        <input type="text" id="currentPath" value="/" 
+                               style="flex: 1; padding: 10px; border: 2px solid var(--border); border-radius: 8px;">
+                    </div>
+                    
+                    <div class="remote-files" id="remoteFiles">
+                        <p style="grid-column: 1/-1; text-align: center; color: #666;">
+                            接続してファイルを表示
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- History Tab -->
+                <div id="historyTab" class="tab-content">
+                    <h2 style="margin-bottom: 20px;">転送履歴</h2>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <select style="padding: 10px; border: 2px solid var(--border); border-radius: 8px;">
+                            <option>すべて</option>
+                            <option>成功のみ</option>
+                            <option>失敗のみ</option>
+                        </select>
+                        <input type="date" style="padding: 10px; border: 2px solid var(--border); border-radius: 8px;">
+                        <button class="btn btn-primary">フィルター</button>
+                    </div>
+                    
+                    <div class="file-list" id="historyList">
+                        <p style="text-align: center; color: #666; padding: 40px;">
+                            履歴データがありません
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- CSV Management Tab -->
+                <div id="csvTab" class="tab-content">
+                    <h2 style="margin-bottom: 20px;">CSV管理</h2>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>総CSV数</h3>
+                            <div class="stat-value">0</div>
+                            <div class="stat-change">ローカル保存</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>エンコーディング</h3>
+                            <div class="stat-value">UTF-8</div>
+                            <div class="stat-change">自動検出</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>最終処理</h3>
+                            <div class="stat-value">--:--</div>
+                            <div class="stat-change">未処理</div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin: 30px 0 15px;">CSVファイル操作</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button class="btn btn-primary" onclick="importCSV()">
+                            📥 CSVインポート
+                        </button>
+                        <button class="btn btn-success" onclick="convertEncoding()">
+                            🔄 エンコード変換
+                        </button>
+                        <button class="btn btn-info" onclick="validateCSV()">
+                            ✅ 検証
+                        </button>
+                    </div>
+                    
+                    <div class="file-list" id="csvList">
+                        <p style="text-align: center; color: #666; padding: 40px;">
+                            CSVファイルをインポートしてください
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Settings Tab -->
+                <div id="settingsTab" class="tab-content">
+                    <h2 style="margin-bottom: 20px;">設定</h2>
+                    
+                    <div style="max-width: 600px;">
+                        <h3 style="margin-bottom: 15px;">基本設定</h3>
+                        <div class="form-group">
+                            <label>デフォルトアップロードディレクトリ</label>
+                            <input type="text" value="/" id="defaultDir">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>ファイル名エンコーディング</label>
+                            <select id="encoding">
+                                <option value="utf8">UTF-8</option>
+                                <option value="sjis">Shift-JIS</option>
+                                <option value="eucjp">EUC-JP</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>同時アップロード数</label>
+                            <input type="number" value="3" min="1" max="10" id="concurrentUploads">
+                        </div>
+                        
+                        <h3 style="margin: 30px 0 15px;">自動化設定</h3>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="autoBackup" checked>
+                                アップロード前に自動バックアップ
+                            </label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="autoRetry" checked>
+                                失敗時に自動リトライ (最大3回)
+                            </label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="notifications" checked>
+                                デスクトップ通知を有効化
+                            </label>
+                        </div>
+                        
+                        <div class="btn-group" style="margin-top: 30px;">
+                            <button class="btn btn-success" onclick="saveSettings()">
+                                💾 設定を保存
+                            </button>
+                            <button class="btn btn-warning" onclick="exportSettings()">
+                                📤 エクスポート
+                            </button>
+                            <button class="btn btn-info" onclick="importSettings()">
+                                📥 インポート
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📁</text></svg>">
+    <script>
+        // Chrome拡張エラーを抑制
+        window.addEventListener('error', function(e) {
+            if (e.message && e.message.includes('runtime.lastError')) {
+                e.preventDefault();
+                return false;
+            }
+        }, true);
+        
+        // Console.errorをオーバーライド
+        const originalError = console.error;
+        console.error = function() {
+            const message = Array.prototype.join.call(arguments, ' ');
+            if (message.includes('runtime.lastError') || message.includes('message port closed')) {
+                return;
+            }
+            originalError.apply(console, arguments);
+        };
+        
+        // Global Variables
+        let isConnected = false;
+        let selectedFiles = [];
+        let uploadHistory = [];
+        let schedules = [];
+        let profiles = [];
+        let currentProfile = 0;
+        let remoteFiles = [];
+        let csvFiles = [];
+        let todayUploadCount = 0;
+        
+        // Initialize
+        window.onload = function() {
+            loadProfiles();
+            loadSettings();
+            loadHistory();
+            loadSchedules();
+            checkTheme();
+            
+            // パスワードフィールドをクリア
+            document.getElementById('password').value = '';
+            
+            // パスワードフィールドにフォーカス時に選択
+            document.getElementById('password').addEventListener('focus', function() {
+                this.select();
+            });
+            
+            // Request notification permission
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        };
+        
+        // Theme Management
+        function toggleTheme() {
+            const currentTheme = document.body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+        
+        function checkTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.setAttribute('data-theme', savedTheme);
+        }
+        
+        // Tab Management
+        function switchTab(tabName) {
+            // 現在のタブをLocalStorageに保存
+            localStorage.setItem('currentTab', tabName);
+            
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Load tab-specific data
+            if (tabName === 'browse' && isConnected) {
+                refreshRemoteFiles();
+            } else if (tabName === 'history') {
+                loadHistory();
+            } else if (tabName === 'schedule') {
+                loadSchedules();
+            }
+        }
+        
+        // Profile Management
+        function loadProfiles() {
+            const saved = localStorage.getItem('ftpProfiles');
+            if (saved) {
+                profiles = JSON.parse(saved);
+                updateProfileList();
+            } else {
+                // Default profiles
+                profiles = [
+                    {
+                        name: '楽天SFTP (推奨)',
+                        protocol: 'sftp',
+                        host: 'upload.rakuten.ne.jp',
+                        port: 22,
+                        username: 'amicoco',
+                        password: ''
+                    },
+                    {
+                        name: '楽天FTP',
+                        protocol: 'ftp',
+                        host: 'ftp.rakuten.ne.jp',
+                        port: 16910,
+                        username: 'amicoco',
+                        password: ''
+                    }
+                ];
+                // デフォルトプロファイルを保存
+                localStorage.setItem('ftpProfiles', JSON.stringify(profiles));
+            }
+            loadProfile(0);
+            
+            // スケジュールタブのサーバー選択は、モーダル表示時に更新される
+        }
+        
+        function updateProfileList() {
+            const list = document.getElementById('profileList');
+            list.innerHTML = profiles.map((profile, index) => `
+                <div class="profile-item ${index === currentProfile ? 'selected' : ''}" 
+                     onclick="loadProfile(${index})">
+                    <span>${profile.name} (${profile.protocol.toUpperCase()})</span>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn btn-sm" onclick="editProfile(${index}); event.stopPropagation();">編集</button>
+                        <button class="btn btn-sm" style="background: #dc3545; color: white;" onclick="deleteProfile(${index}); event.stopPropagation();">削除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function loadProfile(index) {
+            currentProfile = index;
+            const profile = profiles[index];
+            
+            // プロトコルを設定（ラジオボタンも更新）
+            selectProtocol(profile.protocol || 'sftp');
+            
+            // その他のフィールドを設定
+            document.getElementById('host').value = profile.host;
+            document.getElementById('port').value = profile.port;
+            document.getElementById('username').value = profile.username;
+            document.getElementById('password').value = profile.password || '';
+            
+            // パスワードフィールドを常に編集可能にする
+            const passwordField = document.getElementById('password');
+            passwordField.removeAttribute('readonly');
+            passwordField.removeAttribute('disabled');
+            
+            updateProfileList();
+        }
+        
+        function addProfile() {
+            const name = prompt('プロファイル名を入力してください:');
+            if (name) {
+                profiles.push({
+                    name: name,
+                    protocol: 'sftp',
+                    host: '',
+                    port: 22,
+                    username: '',
+                    password: ''
+                });
+                localStorage.setItem('ftpProfiles', JSON.stringify(profiles));
+                updateProfileList();
+                loadProfile(profiles.length - 1);
+            }
+        }
+        
+        function editProfile(index) {
+            const name = prompt('新しいプロファイル名:', profiles[index].name);
+            if (name) {
+                profiles[index].name = name;
+                localStorage.setItem('ftpProfiles', JSON.stringify(profiles));
+                updateProfileList();
+            }
+        }
+        
+        function deleteProfile(index) {
+            if (confirm(`プロファイル「${profiles[index].name}」を削除しますか？
+この操作は取り消せません。`)) {
+                profiles.splice(index, 1);
+                localStorage.setItem('ftpProfiles', JSON.stringify(profiles));
+                
+                // 現在のプロファイルが削除された場合、最初のプロファイルを選択
+                if (currentProfile === index) {
+                    currentProfile = 0;
+                    if (profiles.length > 0) {
+                        loadProfile(0);
+                    }
+                } else if (currentProfile > index) {
+                    currentProfile--;
+                }
+                
+                updateProfileList();
+                showNotification('プロファイルを削除しました', 'success');
+            }
+        }
+        
+        // Protocol Management
+        // 新しいプロトコル選択機能
+        function selectProtocol(protocol) {
+            // 隠しselect要素を更新
+            document.getElementById('protocol').value = protocol;
+            
+            // ラジオボタンの見た目を更新
+            document.querySelectorAll('.protocol-option').forEach(label => {
+                const radio = label.querySelector('input[type="radio"]');
+                if (radio.value === protocol) {
+                    label.style.borderColor = '#4caf50';
+                    label.style.backgroundColor = '#f1f8e9';
+                    label.style.transform = 'scale(1.02)';
+                } else {
+                    label.style.borderColor = '#e0e0e0';
+                    label.style.backgroundColor = 'white';
+                    label.style.transform = 'scale(1)';
+                }
+            });
+            
+            // ポート番号を自動設定
+            updateProtocol();
+        }
+        
+        function updateProtocol() {
+            const protocol = document.getElementById('protocol').value;
+            const portInput = document.getElementById('port');
+            
+            switch(protocol) {
+                case 'ftp':
+                    portInput.value = 21;
+                    break;
+                case 'sftp':
+                    portInput.value = 22;
+                    break;
+                case 'ftps':
+                    portInput.value = 990;
+                    break;
+            }
+        }
+        
+        // Connection Management
+        async function testConnection() {
+            const btn = event.target;
+            btn.innerHTML = '<span class="loading"></span> テスト中...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/test-connection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        host: document.getElementById('host').value,
+                        port: document.getElementById('port').value,
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('接続テスト成功！', 'success');
+                } else {
+                    showNotification('接続テスト失敗: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showNotification('接続エラー: ' + error.message, 'error');
+            } finally {
+                btn.innerHTML = '🔍 テスト';
+                btn.disabled = false;
+            }
+        }
+        
+        async function connectToServerFromForm() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showNotification('ユーザー名とパスワードを入力してください', 'error');
+                return;
+            }
+            
+            const btn = event.target;
+            btn.innerHTML = '<span class="loading"></span> 接続中...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/test-connection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        host: document.getElementById('host').value,
+                        port: document.getElementById('port').value,
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    isConnected = true;
+                    updateConnectionStatus(true);
+                    showNotification('接続成功！', 'success');
+                    
+                    // Save current profile
+                    profiles[currentProfile] = {
+                        ...profiles[currentProfile],
+                        protocol: document.getElementById('protocol').value,
+                        host: document.getElementById('host').value,
+                        port: document.getElementById('port').value,
+                        username: username,
+                        password: password
+                    };
+                    localStorage.setItem('ftpProfiles', JSON.stringify(profiles));
+                    
+                    // Load remote files
+                    if (document.querySelector('.tab.active').textContent.includes('ファイル管理')) {
+                        refreshRemoteFiles();
+                    }
+                } else {
+                    showNotification('接続失敗: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showNotification('接続エラー: ' + error.message, 'error');
+            } finally {
+                btn.innerHTML = '🔗 接続';
+                btn.disabled = false;
+            }
+        }
+        
+        function updateConnectionStatus(connected) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            if (connected) {
+                statusDot.classList.add('connected');
+                statusText.textContent = '接続済み';
+            } else {
+                statusDot.classList.remove('connected');
+                statusText.textContent = '未接続';
+            }
+        }
+        
+        // File Upload Management
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+        
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            
+            const files = Array.from(e.dataTransfer.files);
+            processFiles(files);
+        }
+        
+        function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            processFiles(files);
+        }
+        
+        function processFiles(files) {
+            files.forEach(file => {
+                if (!selectedFiles.find(f => f.name === file.name)) {
+                    selectedFiles.push(file);
+                }
+            });
+            updateFileList();
+        }
+        
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            
+            if (selectedFiles.length === 0) {
+                fileList.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">ファイルが選択されていません</p>';
+                return;
+            }
+            
+            fileList.innerHTML = selectedFiles.map((file, index) => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">${getFileIcon(file.name)}</div>
+                        <div class="file-details">
+                            <h4>${file.name}</h4>
+                            <p>${formatFileSize(file.size)} | ${file.type || 'unknown'}</p>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-success" onclick="uploadFile(${index})">
+                            アップロード
+                        </button>
+                        <button class="btn btn-danger" onclick="removeFile(${index})">
+                            削除
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function uploadFile(index) {
+            if (!isConnected) {
+                showNotification('先に接続してください', 'error');
+                return;
+            }
+            
+            const file = selectedFiles[index];
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('host', document.getElementById('host').value);
+            formData.append('port', document.getElementById('port').value);
+            formData.append('username', document.getElementById('username').value);
+            formData.append('password', document.getElementById('password').value);
+            
+            // アップロード先パスを追加
+            const uploadPath = document.getElementById('uploadPath').value || '/';
+            formData.append('path', uploadPath);
+            
+            // Show progress
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            progressContainer.style.display = 'block';
+            
+            try {
+                showNotification('アップロード開始: ' + file.name, 'info');
+                
+                // Simulate progress
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 30;
+                    if (progress > 90) progress = 90;
+                    progressFill.style.width = progress + '%';
+                    progressFill.textContent = Math.round(progress) + '%';
+                }, 500);
+                
+                const response = await fetch('http://localhost:8080/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                clearInterval(progressInterval);
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    progressFill.style.width = '100%';
+                    progressFill.textContent = '100%';
+                    
+                    showNotification('アップロード成功: ' + file.name, 'success');
+                    
+                    // Add to history
+                    addToHistory({
+                        filename: file.name,
+                        size: file.size,
+                        date: new Date().toISOString(),
+                        status: 'success'
+                    });
+                    
+                    // Update stats
+                    todayUploadCount++;
+                    document.getElementById('todayUploads').textContent = todayUploadCount;
+                    
+                    // Remove from list
+                    removeFile(index);
+                    
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                        progressFill.style.width = '0%';
+                    }, 2000);
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                progressContainer.style.display = 'none';
+                showNotification('アップロード失敗: ' + error.message, 'error');
+                
+                addToHistory({
+                    filename: file.name,
+                    size: file.size,
+                    date: new Date().toISOString(),
+                    status: 'failed',
+                    error: error.message
+                });
+            }
+        }
+        
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+        }
+        
+        // Remote File Management
+        async function refreshRemoteFiles() {
+            if (!isConnected) {
+                showNotification('先に接続してください', 'error');
+                return;
+            }
+            
+            try {
+                const path = document.getElementById('currentPath').value || '/';
+                const response = await fetch('http://localhost:8080/api/list-files', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        host: document.getElementById('host').value,
+                        port: document.getElementById('port').value,
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value,
+                        path: path
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayRemoteFiles(result.files);
+                } else {
+                    showNotification('ファイル一覧取得失敗', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to load remote files:', error);
+            }
+        }
+        
+        function displayRemoteFiles(files) {
+            remoteFiles = files;
+            const container = document.getElementById('remoteFiles');
+            
+            if (files.length === 0) {
+                container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666;">フォルダが空です</p>';
+                return;
+            }
+            
+            container.innerHTML = files.map(file => `
+                <div class="remote-file ${file.type}" 
+                     onclick="${file.type === 'directory' ? `navigateToFolder('${file.name}')` : `downloadFile('${file.name}')`}">
+                    <div class="remote-file-icon">${file.type === 'directory' ? '📁' : getFileIcon(file.name)}</div>
+                    <h4>${file.name}</h4>
+                    <p>${file.type === 'file' ? formatFileSize(file.size) : 'フォルダ'}</p>
+                </div>
+            `).join('');
+        }
+        
+        function navigateToFolder(folderName) {
+            const currentPath = document.getElementById('currentPath').value;
+            const newPath = currentPath.endsWith('/') ? 
+                currentPath + folderName : 
+                currentPath + '/' + folderName;
+            document.getElementById('currentPath').value = newPath;
+            refreshRemoteFiles();
+        }
+        
+        function createFolder() {
+            const folderName = prompt('フォルダ名を入力してください:');
+            if (folderName) {
+                showNotification('フォルダを作成しました: ' + folderName, 'success');
+                refreshRemoteFiles();
+            }
+        }
+        
+        // Schedule Management
+        function loadSchedules() {
+            const saved = localStorage.getItem('schedules');
+            if (saved) {
+                schedules = JSON.parse(saved);
+                updateScheduleList();
+                document.getElementById('activeSchedules').textContent = 
+                    schedules.filter(s => s.active).length;
+            }
+        }
+        
+        function updateScheduleList() {
+            const list = document.getElementById('scheduleList');
+            
+            if (schedules.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">スケジュールがありません</p>';
+                return;
+            }
+            
+            list.innerHTML = schedules.map((schedule, index) => `
+                <div class="schedule-card">
+                    <div class="schedule-header">
+                        <div>
+                            <div class="schedule-title">${schedule.name}</div>
+                            <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                                ${schedule.frequency} | 次回: ${formatDate(schedule.nextRun)}
+                            </p>
+                        </div>
+                        <div>
+                            <span class="schedule-status ${schedule.active ? 'active' : 'paused'}">
+                                ${schedule.active ? '有効' : '一時停止'}
+                            </span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <button class="btn btn-sm btn-warning" onclick="toggleSchedule(${index})">
+                            ${schedule.active ? '⏸️ 一時停止' : '▶️ 再開'}
+                        </button>
+                        <button class="btn btn-sm btn-info" onclick="editSchedule(${index})">
+                            ✏️ 編集
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${index})">
+                            🗑️ 削除
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function handleScheduleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            const listDiv = document.getElementById('selectedFilesList');
+            
+            if (files.length === 0) {
+                listDiv.innerHTML = '';
+                return;
+            }
+            
+            listDiv.innerHTML = `
+                <div style="
+                    background: white;
+                    border: 1px solid #4caf50;
+                    border-radius: 8px;
+                    padding: 10px;
+                    margin-top: 10px;
+                ">
+                    <h4 style="margin: 0 0 10px 0; color: #2e7d32;">選択されたファイル (${files.length})</h4>
+                    ${files.map(file => `
+                        <div style="
+                            display: flex;
+                            align-items: center;
+                            padding: 5px;
+                            border-bottom: 1px solid #e0e0e0;
+                        ">
+                            <span style="margin-right: 10px;">📊</span>
+                            <span style="flex: 1;">${file.name}</span>
+                            <span style="color: #666; font-size: 12px;">${formatFileSize(file.size)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            updateSchedulePreview();
+        }
+        
+        function switchFileMode(mode) {
+            // ボタンのスタイル切り替え
+            document.querySelectorAll('.file-mode-btn').forEach(btn => {
+                if (btn.getAttribute('data-mode') === mode) {
+                    btn.classList.add('active');
+                    btn.style.borderColor = '#4caf50';
+                    btn.style.background = '#e8f5e9';
+                } else {
+                    btn.classList.remove('active');
+                    btn.style.borderColor = '#e0e0e0';
+                    btn.style.background = 'white';
+                }
+            });
+            
+            // エリアの表示切り替え
+            if (mode === 'select') {
+                document.getElementById('fileSelectArea').style.display = 'block';
+                document.getElementById('folderWatchArea').style.display = 'none';
+            } else {
+                document.getElementById('fileSelectArea').style.display = 'none';
+                document.getElementById('folderWatchArea').style.display = 'block';
+            }
+            
+            updateSchedulePreview();
+        }
+        
+        function loadProfilesIntoSchedule(retryCount = 0) {
+            console.log('loadProfilesIntoSchedule called, retry:', retryCount);
+            const select = document.getElementById('scheduleProfile');
+            if (!select) {
+                console.error('scheduleProfile element not found');
+                // 最大3回まで再試行
+                if (retryCount < 3) {
+                    console.log('Retrying in 200ms...');
+                    setTimeout(() => {
+                        loadProfilesIntoSchedule(retryCount + 1);
+                    }, 200);
+                }
+                return;
+            }
+            
+            try {
+                const savedProfiles = localStorage.getItem('ftpProfiles');
+                console.log('Saved profiles:', savedProfiles);
+                
+                const profiles = savedProfiles ? JSON.parse(savedProfiles) : [];
+                console.log('Parsed profiles:', profiles);
+                
+                if (profiles.length === 0) {
+                    // プロファイルが空の場合はデフォルトを作成
+                    const defaultProfile = {
+                        name: '楽天メイン',
+                        protocol: 'sftp',
+                        host: 'upload.rakuten.ne.jp',
+                        port: 22,
+                        username: 'amicoco',
+                        password: ''
+                    };
+                    profiles.push(defaultProfile);
+                    localStorage.setItem('ftpProfiles', JSON.stringify(profiles));
+                    console.log('Created default profile');
+                }
+                
+                const optionsHTML = '<option value="">サーバーを選択してください</option>' +
+                    profiles.map((profile, index) => 
+                        `<option value="${index}">${profile.name} (${profile.protocol.toUpperCase()})</option>`
+                    ).join('');
+                
+                select.innerHTML = optionsHTML;
+                console.log('✅ Successfully updated select options with', profiles.length, 'profiles');
+            } catch (error) {
+                console.error('Error in loadProfilesIntoSchedule:', error);
+            }
+        }
+        
+        function showScheduleModal() {
+            // モーダルHTML作成
+            const modalHtml = `
+                <div id="scheduleModal" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.5);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
+                ">
+                    <div style="
+                        background: white;
+                        border-radius: 20px;
+                        padding: 40px;
+                        width: 600px;
+                        max-width: 95%;
+                        max-height: 90vh;
+                        overflow-y: auto;
+                        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                    ">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                            <h2 style="color: #333; font-size: 24px;">📅 スケジュール設定</h2>
+                            <button onclick="closeScheduleModal()" style="
+                                background: none;
+                                border: none;
+                                font-size: 28px;
+                                cursor: pointer;
+                                color: #999;
+                            ">×</button>
+                        </div>
+                        
+                        <!-- ステップ1: 基本情報 -->
+                        <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="color: #bf0000; font-size: 16px; margin-bottom: 15px;">
+                                <span style="background: #bf0000; color: white; border-radius: 50%; padding: 2px 8px; margin-right: 8px;">1</span>
+                                基本情報
+                            </h3>
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">
+                                    📝 スケジュール名 <span style="color: red;">*</span>
+                                </label>
+                                <input type="text" id="scheduleName" style="
+                                    width: 100%;
+                                    padding: 12px;
+                                    border: 2px solid #e0e0e0;
+                                    border-radius: 8px;
+                                    font-size: 15px;
+                                " placeholder="例: 商品データ毎日更新">
+                            </div>
+                        </div>
+                        
+                        <!-- ステップ2: 実行頻度 -->
+                        <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="color: #bf0000; font-size: 16px; margin-bottom: 15px;">
+                                <span style="background: #bf0000; color: white; border-radius: 50%; padding: 2px 8px; margin-right: 8px;">2</span>
+                                実行頻度を選択
+                            </h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+                                <button type="button" class="schedule-type-btn" data-type="once" onclick="selectScheduleType('once')" style="
+                                    padding: 15px;
+                                    border: 2px solid #e0e0e0;
+                                    border-radius: 10px;
+                                    background: white;
+                                    cursor: pointer;
+                                    transition: all 0.3s;
+                                    text-align: center;
+                                ">
+                                    <div style="font-size: 24px; margin-bottom: 5px;">📌</div>
+                                    <div style="font-weight: 600; color: #333;">1回のみ</div>
+                                    <div style="font-size: 11px; color: #666; margin-top: 3px;">特定日時に実行</div>
+                                </button>
+                                <button type="button" class="schedule-type-btn" data-type="daily" onclick="selectScheduleType('daily')" style="
+                                    padding: 15px;
+                                    border: 2px solid #e0e0e0;
+                                    border-radius: 10px;
+                                    background: white;
+                                    cursor: pointer;
+                                    transition: all 0.3s;
+                                    text-align: center;
+                                ">
+                                    <div style="font-size: 24px; margin-bottom: 5px;">☀️</div>
+                                    <div style="font-weight: 600; color: #333;">毎日</div>
+                                    <div style="font-size: 11px; color: #666; margin-top: 3px;">毎日同じ時刻</div>
+                                </button>
+                                <button type="button" class="schedule-type-btn" data-type="weekly" onclick="selectScheduleType('weekly')" style="
+                                    padding: 15px;
+                                    border: 2px solid #e0e0e0;
+                                    border-radius: 10px;
+                                    background: white;
+                                    cursor: pointer;
+                                    transition: all 0.3s;
+                                    text-align: center;
+                                ">
+                                    <div style="font-size: 24px; margin-bottom: 5px;">📆</div>
+                                    <div style="font-weight: 600; color: #333;">毎週</div>
+                                    <div style="font-size: 11px; color: #666; margin-top: 3px;">特定の曜日</div>
+                                </button>
+                                <button type="button" class="schedule-type-btn" data-type="monthly" onclick="selectScheduleType('monthly')" style="
+                                    padding: 15px;
+                                    border: 2px solid #e0e0e0;
+                                    border-radius: 10px;
+                                    background: white;
+                                    cursor: pointer;
+                                    transition: all 0.3s;
+                                    text-align: center;
+                                ">
+                                    <div style="font-size: 24px; margin-bottom: 5px;">🗓️</div>
+                                    <div style="font-weight: 600; color: #333;">毎月</div>
+                                    <div style="font-size: 11px; color: #666; margin-top: 3px;">毎月特定日</div>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- サーバーとファイルの紐付け -->
+                        <div style="background: #e8f5e9; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="color: #2e7d32; font-size: 16px; margin-bottom: 15px;">
+                                <span style="background: #2e7d32; color: white; border-radius: 50%; padding: 2px 8px; margin-right: 8px;">🔗</span>
+                                サーバーとファイルの設定
+                            </h3>
+                            
+                            <!-- サーバー選択 -->
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">
+                                    🖥️ アップロード先サーバー <span style="color: red;">*</span>
+                                </label>
+                                <select id="scheduleProfile" style="
+                                    width: 100%;
+                                    padding: 12px;
+                                    border: 2px solid #4caf50;
+                                    border-radius: 8px;
+                                    font-size: 15px;
+                                    background: white;
+                                " onchange="updateSchedulePreview()">
+                                    <option value="">サーバーを選択してください</option>
+                                </select>
+                                <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                                    接続プロファイルから選択します
+                                </p>
+                            </div>
+                            
+                            <!-- CSVファイル選択 -->
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">
+                                    📊 アップロードするCSVファイル
+                                </label>
+                                
+                                <!-- ファイル選択方法の切り替え -->
+                                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                    <button type="button" onclick="switchFileMode('select')" 
+                                            class="file-mode-btn active" data-mode="select" style="
+                                        flex: 1;
+                                        padding: 10px;
+                                        border: 2px solid #4caf50;
+                                        border-radius: 8px;
+                                        background: white;
+                                        cursor: pointer;
+                                        font-weight: 600;
+                                    ">
+                                        📁 ファイルを選択
+                                    </button>
+                                    <button type="button" onclick="switchFileMode('folder')" 
+                                            class="file-mode-btn" data-mode="folder" style="
+                                        flex: 1;
+                                        padding: 10px;
+                                        border: 2px solid #e0e0e0;
+                                        border-radius: 8px;
+                                        background: white;
+                                        cursor: pointer;
+                                        font-weight: 600;
+                                    ">
+                                        📂 フォルダ監視
+                                    </button>
+                                </div>
+                                
+                                <!-- ファイル選択エリア -->
+                                <div id="fileSelectArea">
+                                    <div style="
+                                        border: 2px dashed #4caf50;
+                                        border-radius: 8px;
+                                        padding: 20px;
+                                        text-align: center;
+                                        cursor: pointer;
+                                        background: #f1f8e9;
+                                    " onclick="document.getElementById('scheduleFiles').click()">
+                                        <div style="font-size: 32px;">📤</div>
+                                        <p style="margin: 10px 0; font-weight: 600;">クリックしてCSVファイルを選択</p>
+                                        <p style="font-size: 12px; color: #666;">複数ファイル選択可能</p>
+                                        <input type="file" id="scheduleFiles" multiple accept=".csv" 
+                                               style="display: none;" onchange="handleScheduleFileSelect(event)">
+                                    </div>
+                                    
+                                    <!-- 選択されたファイルリスト -->
+                                    <div id="selectedFilesList" style="margin-top: 10px;"></div>
+                                </div>
+                                
+                                <!-- フォルダ監視エリア -->
+                                <div id="folderWatchArea" style="display: none;">
+                                    <input type="text" id="watchFolder" placeholder="例: C:\Users\data\csv" style="
+                                        width: 100%;
+                                        padding: 12px;
+                                        border: 2px solid #4caf50;
+                                        border-radius: 8px;
+                                        font-size: 15px;
+                                    ">
+                                    <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                                        指定フォルダ内の全CSVファイルを自動アップロード
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- アップロードパス設定 -->
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">
+                                    📍 サーバー上のアップロード先パス
+                                </label>
+                                <input type="text" id="uploadPath" placeholder="例: /cabinet/data/" style="
+                                    width: 100%;
+                                    padding: 12px;
+                                    border: 2px solid #4caf50;
+                                    border-radius: 8px;
+                                    font-size: 15px;
+                                " value="/cabinet/">
+                                <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                                    楽天の場合は通常 /cabinet/ から始まります
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- ステップ3: 詳細設定 -->
+                        <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="color: #bf0000; font-size: 16px; margin-bottom: 15px;">
+                                <span style="background: #bf0000; color: white; border-radius: 50%; padding: 2px 8px; margin-right: 8px;">3</span>
+                                詳細設定
+                            </h3>
+                            
+                            <!-- 1回のみの設定 -->
+                            <div id="onceOptions" style="display: none;">
+                                <div style="margin-bottom: 15px;">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">
+                                        📅 実行日を選択
+                                    </label>
+                                    <input type="date" id="scheduleDate" style="
+                                        width: 100%;
+                                        padding: 12px;
+                                        border: 2px solid #e0e0e0;
+                                        border-radius: 8px;
+                                        font-size: 15px;
+                                    " value="${new Date().toISOString().split('T')[0]}" min="${new Date().toISOString().split('T')[0]}">
+                                </div>
+                            </div>
+                            
+                            <!-- 毎日の設定 -->
+                            <div id="dailyOptions" style="display: none;">
+                                <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                                    <p style="color: #2e7d32; margin: 0;">
+                                        ✅ 毎日、指定した時刻に自動実行されます
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- 毎週の設定 -->
+                            <div id="weeklyOptions" style="display: none;">
+                                <div style="margin-bottom: 15px;">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">
+                                        📆 実行する曜日を選択 <span style="color: red;">*</span>
+                                    </label>
+                                    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;">
+                                        <label style="
+                                            display: flex;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            padding: 10px 5px;
+                                            border: 2px solid #e0e0e0;
+                                            border-radius: 8px;
+                                            cursor: pointer;
+                                            transition: all 0.3s;
+                                        " class="weekday-label">
+                                            <input type="checkbox" value="1" name="weekday" style="margin-bottom: 5px;">
+                                            <span style="font-weight: 600;">月</span>
+                                        </label>
+                                        <label style="
+                                            display: flex;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            padding: 10px 5px;
+                                            border: 2px solid #e0e0e0;
+                                            border-radius: 8px;
+                                            cursor: pointer;
+                                            transition: all 0.3s;
+                                        " class="weekday-label">
+                                            <input type="checkbox" value="2" name="weekday" style="margin-bottom: 5px;">
+                                            <span style="font-weight: 600;">火</span>
+                                        </label>
+                                        <label style="
+                                            display: flex;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            padding: 10px 5px;
+                                            border: 2px solid #e0e0e0;
+                                            border-radius: 8px;
+                                            cursor: pointer;
+                                            transition: all 0.3s;
+                                        " class="weekday-label">
+                                            <input type="checkbox" value="3" name="weekday" style="margin-bottom: 5px;">
+                                            <span style="font-weight: 600;">水</span>
+                                        </label>
+                                        <label style="
+                                            display: flex;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            padding: 10px 5px;
+                                            border: 2px solid #e0e0e0;
+                                            border-radius: 8px;
+                                            cursor: pointer;
+                                            transition: all 0.3s;
+                                        " class="weekday-label">
+                                            <input type="checkbox" value="4" name="weekday" style="margin-bottom: 5px;">
+                                            <span style="font-weight: 600;">木</span>
+                                        </label>
+                                        <label style="
+                                            display: flex;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            padding: 10px 5px;
+                                            border: 2px solid #e0e0e0;
+                                            border-radius: 8px;
+                                            cursor: pointer;
+                                            transition: all 0.3s;
+                                        " class="weekday-label">
+                                            <input type="checkbox" value="5" name="weekday" style="margin-bottom: 5px;">
+                                            <span style="font-weight: 600;">金</span>
+                                        </label>
+                                        <label style="
+                                            display: flex;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            padding: 10px 5px;
+                                            border: 2px solid #e0e0e0;
+                                            border-radius: 8px;
+                                            cursor: pointer;
+                                            transition: all 0.3s;
+                                        " class="weekday-label">
+                                            <input type="checkbox" value="6" name="weekday" style="margin-bottom: 5px;">
+                                            <span style="font-weight: 600; color: #1976d2;">土</span>
+                                        </label>
+                                        <label style="
+                                            display: flex;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            padding: 10px 5px;
+                                            border: 2px solid #e0e0e0;
+                                            border-radius: 8px;
+                                            cursor: pointer;
+                                            transition: all 0.3s;
+                                        " class="weekday-label">
+                                            <input type="checkbox" value="0" name="weekday" style="margin-bottom: 5px;">
+                                            <span style="font-weight: 600; color: #d32f2f;">日</span>
+                                        </label>
+                                    </div>
+                                    <div style="margin-top: 10px;">
+                                        <button type="button" onclick="selectWeekdays('all')" style="
+                                            padding: 8px 15px;
+                                            margin-right: 10px;
+                                            border: 1px solid #ddd;
+                                            border-radius: 6px;
+                                            background: white;
+                                            cursor: pointer;
+                                            font-size: 13px;
+                                        ">全て選択</button>
+                                        <button type="button" onclick="selectWeekdays('weekday')" style="
+                                            padding: 8px 15px;
+                                            margin-right: 10px;
+                                            border: 1px solid #ddd;
+                                            border-radius: 6px;
+                                            background: white;
+                                            cursor: pointer;
+                                            font-size: 13px;
+                                        ">平日のみ</button>
+                                        <button type="button" onclick="selectWeekdays('clear')" style="
+                                            padding: 8px 15px;
+                                            border: 1px solid #ddd;
+                                            border-radius: 6px;
+                                            background: white;
+                                            cursor: pointer;
+                                            font-size: 13px;
+                                        ">クリア</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 毎月の設定 -->
+                            <div id="monthlyOptions" style="display: none;">
+                                <div style="margin-bottom: 15px;">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">
+                                        🗓️ 実行日を選択
+                                    </label>
+                                    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 10px;">
+                                        ${Array.from({length: 31}, (_, i) => `
+                                            <button type="button" class="monthday-btn" data-day="${i+1}" onclick="selectMonthDay(${i+1})" style="
+                                                padding: 8px;
+                                                border: 2px solid #e0e0e0;
+                                                border-radius: 6px;
+                                                background: white;
+                                                cursor: pointer;
+                                                font-weight: 600;
+                                                transition: all 0.3s;
+                                            ">${i+1}</button>
+                                        `).join('')}
+                                        <button type="button" class="monthday-btn" data-day="last" onclick="selectMonthDay('last')" style="
+                                            grid-column: span 3;
+                                            padding: 8px;
+                                            border: 2px solid #e0e0e0;
+                                            border-radius: 6px;
+                                            background: white;
+                                            cursor: pointer;
+                                            font-weight: 600;
+                                            transition: all 0.3s;
+                                        ">月末</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 共通: 時刻設定 -->
+                            <div style="margin-top: 20px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">
+                                    ⏰ 実行時刻 <span style="color: red;">*</span>
+                                </label>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <input type="time" id="scheduleTime" value="09:00" style="
+                                        flex: 1;
+                                        padding: 12px;
+                                        border: 2px solid #e0e0e0;
+                                        border-radius: 8px;
+                                        font-size: 15px;
+                                    ">
+                                    <div style="display: flex; gap: 5px;">
+                                        <button type="button" onclick="setQuickTime('09:00')" style="
+                                            padding: 8px 12px;
+                                            border: 1px solid #ddd;
+                                            border-radius: 6px;
+                                            background: white;
+                                            cursor: pointer;
+                                            font-size: 12px;
+                                        ">朝9時</button>
+                                        <button type="button" onclick="setQuickTime('12:00')" style="
+                                            padding: 8px 12px;
+                                            border: 1px solid #ddd;
+                                            border-radius: 6px;
+                                            background: white;
+                                            cursor: pointer;
+                                            font-size: 12px;
+                                        ">昼12時</button>
+                                        <button type="button" onclick="setQuickTime('18:00')" style="
+                                            padding: 8px 12px;
+                                            border: 1px solid #ddd;
+                                            border-radius: 6px;
+                                            background: white;
+                                            cursor: pointer;
+                                            font-size: 12px;
+                                        ">夕6時</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- プレビュー -->
+                        <div id="schedulePreview" style="
+                            background: #e3f2fd;
+                            border: 2px solid #2196f3;
+                            border-radius: 12px;
+                            padding: 15px;
+                            margin-bottom: 20px;
+                            display: none;
+                        ">
+                            <h4 style="color: #1565c0; margin-bottom: 10px;">📝 設定内容の確認</h4>
+                            <div id="previewContent" style="color: #333;"></div>
+                        </div>
+                        
+                        <!-- ボタン -->
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="saveSchedule()" style="
+                                flex: 1;
+                                padding: 15px;
+                                background: linear-gradient(135deg, #bf0000, #ff3333);
+                                color: white;
+                                border: none;
+                                border-radius: 10px;
+                                font-size: 16px;
+                                font-weight: 600;
+                                cursor: pointer;
+                                transition: all 0.3s;
+                                box-shadow: 0 4px 15px rgba(191, 0, 0, 0.3);
+                            ">
+                                💾 スケジュールを保存
+                            </button>
+                            <button onclick="closeScheduleModal()" style="
+                                padding: 15px 30px;
+                                background: #f5f5f5;
+                                color: #666;
+                                border: 2px solid #e0e0e0;
+                                border-radius: 10px;
+                                font-size: 16px;
+                                font-weight: 600;
+                                cursor: pointer;
+                                transition: all 0.3s;
+                            ">
+                                キャンセル
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // モーダルを表示
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // スタイルを追加
+            const style = document.createElement('style');
+            style.textContent = `
+                .schedule-type-btn:hover {
+                    border-color: #bf0000 !important;
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                }
+                .schedule-type-btn.selected {
+                    border-color: #bf0000 !important;
+                    background: #fff5f5 !important;
+                }
+                .weekday-label:has(input:checked) {
+                    background: #e8f5e9 !important;
+                    border-color: #4caf50 !important;
+                }
+                .monthday-btn.selected {
+                    background: #bf0000 !important;
+                    color: white !important;
+                }
+                #scheduleModal input[type="date"],
+                #scheduleModal input[type="time"] {
+                    cursor: pointer;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // モーダルが作成された後にプロファイルを読み込み
+            setTimeout(() => {
+                loadProfilesIntoSchedule();
+                // デフォルトで「毎日」を選択
+                selectScheduleType('daily');
+            }, 100);
+        }
+        
+        // 新しいヘルパー関数を追加
+        function selectScheduleType(type) {
+            // すべてのボタンの選択状態をクリア
+            document.querySelectorAll('.schedule-type-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // 選択されたボタンをハイライト
+            document.querySelector(`.schedule-type-btn[data-type="${type}"]`).classList.add('selected');
+            
+            // すべてのオプションを非表示
+            document.getElementById('onceOptions').style.display = 'none';
+            document.getElementById('dailyOptions').style.display = 'none';
+            document.getElementById('weeklyOptions').style.display = 'none';
+            document.getElementById('monthlyOptions').style.display = 'none';
+            
+            // 選択されたタイプのオプションを表示
+            switch(type) {
+                case 'once':
+                    document.getElementById('onceOptions').style.display = 'block';
+                    break;
+                case 'daily':
+                    document.getElementById('dailyOptions').style.display = 'block';
+                    break;
+                case 'weekly':
+                    document.getElementById('weeklyOptions').style.display = 'block';
+                    break;
+                case 'monthly':
+                    document.getElementById('monthlyOptions').style.display = 'block';
+                    break;
+            }
+            
+            // プレビューを更新
+            updateSchedulePreview();
+        }
+        
+        function selectWeekdays(mode) {
+            const checkboxes = document.querySelectorAll('input[name="weekday"]');
+            
+            switch(mode) {
+                case 'all':
+                    checkboxes.forEach(cb => cb.checked = true);
+                    break;
+                case 'weekday':
+                    checkboxes.forEach(cb => {
+                        const value = parseInt(cb.value);
+                        cb.checked = value >= 1 && value <= 5;
+                    });
+                    break;
+                case 'clear':
+                    checkboxes.forEach(cb => cb.checked = false);
+                    break;
+            }
+            updateSchedulePreview();
+        }
+        
+        function selectMonthDay(day) {
+            // すべての日付ボタンの選択状態をクリア
+            document.querySelectorAll('.monthday-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // 選択された日付をハイライト
+            document.querySelector(`.monthday-btn[data-day="${day}"]`).classList.add('selected');
+            
+            updateSchedulePreview();
+        }
+        
+        function setQuickTime(time) {
+            document.getElementById('scheduleTime').value = time;
+            updateSchedulePreview();
+        }
+        
+        function updateSchedulePreview() {
+            const preview = document.getElementById('schedulePreview');
+            const content = document.getElementById('previewContent');
+            const name = document.getElementById('scheduleName').value;
+            const time = document.getElementById('scheduleTime').value;
+            
+            if (!name) {
+                preview.style.display = 'none';
+                return;
+            }
+            
+            let previewText = `<strong>名前:</strong> ${name}<br>`;
+            
+            // 選択されているタイプを取得
+            const selectedBtn = document.querySelector('.schedule-type-btn.selected');
+            if (selectedBtn) {
+                const type = selectedBtn.getAttribute('data-type');
+                
+                switch(type) {
+                    case 'once':
+                        const date = document.getElementById('scheduleDate').value;
+                        if (date) {
+                            const dateObj = new Date(date);
+                            previewText += `<strong>実行日時:</strong> ${dateObj.toLocaleDateString('ja-JP')} ${time}<br>`;
+                            previewText += `<strong>頻度:</strong> 1回のみ`;
+                        }
+                        break;
+                    case 'daily':
+                        previewText += `<strong>実行時刻:</strong> 毎日 ${time}<br>`;
+                        previewText += `<strong>頻度:</strong> 毎日`;
+                        break;
+                    case 'weekly':
+                        const weekdays = Array.from(document.querySelectorAll('input[name="weekday"]:checked'))
+                            .map(cb => ['日','月','火','水','木','金','土'][parseInt(cb.value)]);
+                        if (weekdays.length > 0) {
+                            previewText += `<strong>実行曜日:</strong> 毎週 ${weekdays.join(', ')}<br>`;
+                            previewText += `<strong>実行時刻:</strong> ${time}`;
+                        }
+                        break;
+                    case 'monthly':
+                        const selectedDay = document.querySelector('.monthday-btn.selected');
+                        if (selectedDay) {
+                            const day = selectedDay.getAttribute('data-day');
+                            const dayText = day === 'last' ? '月末' : `${day}日`;
+                            previewText += `<strong>実行日:</strong> 毎月${dayText}<br>`;
+                            previewText += `<strong>実行時刻:</strong> ${time}`;
+                        }
+                        break;
+                }
+                
+                preview.style.display = 'block';
+                content.innerHTML = previewText;
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+        
+        function toggleScheduleOptions() {
+            const type = document.getElementById('scheduleType').value;
+            
+            // すべてのオプションを非表示
+            document.getElementById('onceOptions').style.display = 'none';
+            document.getElementById('weeklyOptions').style.display = 'none';
+            document.getElementById('monthlyOptions').style.display = 'none';
+            document.getElementById('customOptions').style.display = 'none';
+            
+            // 選択されたタイプに応じて表示
+            switch(type) {
+                case 'once':
+                    document.getElementById('onceOptions').style.display = 'block';
+                    break;
+                case 'weekly':
+                    document.getElementById('weeklyOptions').style.display = 'block';
+                    break;
+                case 'monthly':
+                    document.getElementById('monthlyOptions').style.display = 'block';
+                    break;
+                case 'custom':
+                    document.getElementById('customOptions').style.display = 'block';
+                    break;
+            }
+        }
+        
+        function saveSchedule() {
+            const name = document.getElementById('scheduleName').value;
+            if (!name) {
+                showNotification('スケジュール名を入力してください', 'error');
+                return;
+            }
+            
+            const time = document.getElementById('scheduleTime').value;
+            if (!time) {
+                showNotification('実行時刻を入力してください', 'error');
+                return;
+            }
+            
+            // 選択されているタイプを取得
+            const selectedBtn = document.querySelector('.schedule-type-btn.selected');
+            if (!selectedBtn) {
+                showNotification('実行頻度を選択してください', 'error');
+                return;
+            }
+            
+            const type = selectedBtn.getAttribute('data-type');
+            
+            let scheduleConfig = {
+                name: name,
+                type: type,
+                time: time,
+                active: true,
+                files: []
+            };
+            
+            // タイプごとの設定
+            switch(type) {
+                case 'once':
+                    const scheduleDate = document.getElementById('scheduleDate').value;
+                    if (!scheduleDate) {
+                        showNotification('実行日を選択してください', 'error');
+                        return;
+                    }
+                    // 過去の日付チェック
+                    const selectedDate = new Date(scheduleDate);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (selectedDate < today) {
+                        showNotification('過去の日付は選択できません', 'error');
+                        return;
+                    }
+                    scheduleConfig.date = scheduleDate;
+                    scheduleConfig.frequency = '1回のみ';
+                    scheduleConfig.nextRun = new Date(scheduleConfig.date + 'T' + time).toISOString();
+                    break;
+                case 'daily':
+                    scheduleConfig.frequency = '毎日';
+                    scheduleConfig.nextRun = calculateNextRun(time, 'daily');
+                    break;
+                case 'weekly':
+                    const weekdays = Array.from(document.querySelectorAll('input[name="weekday"]:checked'))
+                        .map(cb => parseInt(cb.value));
+                    if (weekdays.length === 0) {
+                        showNotification('曜日を選択してください', 'error');
+                        return;
+                    }
+                    scheduleConfig.weekdays = weekdays;
+                    scheduleConfig.frequency = '毎週 ' + weekdays.map(d => ['日','月','火','水','木','金','土'][d]).join(',');
+                    scheduleConfig.nextRun = calculateNextWeeklyRun(time, weekdays);
+                    break;
+                case 'monthly':
+                    const selectedDayBtn = document.querySelector('.monthday-btn.selected');
+                    if (!selectedDayBtn) {
+                        showNotification('実行日を選択してください', 'error');
+                        return;
+                    }
+                    const monthlyDay = selectedDayBtn.getAttribute('data-day');
+                    scheduleConfig.monthlyDay = monthlyDay;
+                    scheduleConfig.frequency = monthlyDay === 'last' ? '毎月末' : `毎月${monthlyDay}日`;
+                    scheduleConfig.nextRun = calculateNextMonthlyRun(time, monthlyDay);
+                    break;
+                case 'custom':
+                    const cron = document.getElementById('cronExpression').value;
+                    if (!cron) {
+                        showNotification('Cron式を入力してください', 'error');
+                        return;
+                    }
+                    scheduleConfig.cron = cron;
+                    scheduleConfig.frequency = 'カスタム: ' + cron;
+                    scheduleConfig.nextRun = calculateNextRun(time, 'daily'); // 簡易計算
+                    break;
+            }
+            
+            schedules.push(scheduleConfig);
+            localStorage.setItem('schedules', JSON.stringify(schedules));
+            updateScheduleList();
+            document.getElementById('activeSchedules').textContent = 
+                schedules.filter(s => s.active).length;
+            showNotification('スケジュールを作成しました', 'success');
+            closeScheduleModal();
+        }
+        
+        function closeScheduleModal() {
+            const modal = document.getElementById('scheduleModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        function calculateNextWeeklyRun(time, weekdays) {
+            const now = new Date();
+            const [hours, minutes] = time.split(':').map(Number);
+            
+            for (let i = 0; i < 7; i++) {
+                const next = new Date(now);
+                next.setDate(next.getDate() + i);
+                next.setHours(hours, minutes, 0, 0);
+                
+                if (weekdays.includes(next.getDay()) && next > now) {
+                    return next.toISOString();
+                }
+            }
+            
+            // 次週の最初の該当曜日
+            const next = new Date(now);
+            next.setDate(next.getDate() + 7);
+            while (!weekdays.includes(next.getDay())) {
+                next.setDate(next.getDate() + 1);
+            }
+            next.setHours(hours, minutes, 0, 0);
+            return next.toISOString();
+        }
+        
+        function calculateNextMonthlyRun(time, day) {
+            const now = new Date();
+            const [hours, minutes] = time.split(':').map(Number);
+            const next = new Date(now);
+            
+            if (day === 'last') {
+                // 月末の計算
+                next.setMonth(next.getMonth() + 1, 0);
+            } else {
+                next.setDate(parseInt(day));
+                if (next <= now) {
+                    next.setMonth(next.getMonth() + 1);
+                }
+            }
+            
+            next.setHours(hours, minutes, 0, 0);
+            return next.toISOString();
+        }
+        
+        function toggleSchedule(index) {
+            schedules[index].active = !schedules[index].active;
+            localStorage.setItem('schedules', JSON.stringify(schedules));
+            updateScheduleList();
+            document.getElementById('activeSchedules').textContent = 
+                schedules.filter(s => s.active).length;
+        }
+        
+        function deleteSchedule(index) {
+            if (confirm('このスケジュールを削除しますか？')) {
+                schedules.splice(index, 1);
+                localStorage.setItem('schedules', JSON.stringify(schedules));
+                updateScheduleList();
+                showNotification('スケジュールを削除しました', 'success');
+            }
+        }
+        
+        function editSchedule(index) {
+            showNotification('編集機能は準備中です', 'info');
+        }
+        
+        // History Management
+        function loadHistory() {
+            const saved = localStorage.getItem('uploadHistory');
+            if (saved) {
+                uploadHistory = JSON.parse(saved);
+                updateHistoryDisplay();
+            }
+        }
+        
+        function addToHistory(item) {
+            uploadHistory.unshift(item);
+            if (uploadHistory.length > 100) {
+                uploadHistory = uploadHistory.slice(0, 100);
+            }
+            localStorage.setItem('uploadHistory', JSON.stringify(uploadHistory));
+            updateHistoryDisplay();
+        }
+        
+        function updateHistoryDisplay() {
+            const container = document.getElementById('historyList');
+            
+            if (uploadHistory.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">履歴データがありません</p>';
+                return;
+            }
+            
+            container.innerHTML = uploadHistory.map(item => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon" style="background: ${item.status === 'success' ? 'var(--success)' : 'var(--danger)'}">
+                            ${item.status === 'success' ? '✅' : '❌'}
+                        </div>
+                        <div class="file-details">
+                            <h4>${item.filename}</h4>
+                            <p>${formatFileSize(item.size)} | ${formatDate(item.date)}</p>
+                            ${item.error ? `<p style="color: var(--danger); font-size: 11px;">${item.error}</p>` : ''}
+                        </div>
+                    </div>
+                    <div style="color: ${item.status === 'success' ? 'var(--success)' : 'var(--danger)'};">
+                        ${item.status === 'success' ? '成功' : '失敗'}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // CSV Management
+        function importCSV() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv';
+            input.multiple = true;
+            input.onchange = (e) => {
+                const files = Array.from(e.target.files);
+                files.forEach(file => {
+                    csvFiles.push({
+                        name: file.name,
+                        size: file.size,
+                        encoding: detectEncoding(file),
+                        date: new Date().toISOString()
+                    });
+                });
+                updateCSVList();
+                showNotification(`${files.length}個のCSVファイルをインポートしました`, 'success');
+            };
+            input.click();
+        }
+        
+        function updateCSVList() {
+            const container = document.getElementById('csvList');
+            
+            if (csvFiles.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">CSVファイルをインポートしてください</p>';
+                return;
+            }
+            
+            container.innerHTML = csvFiles.map((file, index) => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">📊</div>
+                        <div class="file-details">
+                            <h4>${file.name}</h4>
+                            <p>${formatFileSize(file.size)} | ${file.encoding} | ${formatDate(file.date)}</p>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-info" onclick="previewCSV(${index})">
+                            プレビュー
+                        </button>
+                        <button class="btn btn-success" onclick="convertCSVEncoding(${index})">
+                            変換
+                        </button>
+                        <button class="btn btn-danger" onclick="removeCSV(${index})">
+                            削除
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Update stats
+            const statsContainer = document.querySelector('#csvTab .stats-grid');
+            statsContainer.children[0].querySelector('.stat-value').textContent = csvFiles.length;
+        }
+        
+        function convertEncoding() {
+            showNotification('エンコード変換機能を実行中...', 'info');
+        }
+        
+        function validateCSV() {
+            showNotification('CSV検証を実行中...', 'info');
+        }
+        
+        function detectEncoding(file) {
+            // Simplified encoding detection
+            return 'UTF-8';
+        }
+        
+        function previewCSV(index) {
+            showNotification(`プレビュー: ${csvFiles[index].name}`, 'info');
+        }
+        
+        function convertCSVEncoding(index) {
+            showNotification(`エンコード変換: ${csvFiles[index].name}`, 'info');
+        }
+        
+        function removeCSV(index) {
+            csvFiles.splice(index, 1);
+            updateCSVList();
+        }
+        
+        // Settings Management
+        function loadSettings() {
+            const saved = localStorage.getItem('ftpSettings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                document.getElementById('defaultDir').value = settings.defaultDir || '/';
+                document.getElementById('encoding').value = settings.encoding || 'utf8';
+                document.getElementById('concurrentUploads').value = settings.concurrentUploads || 3;
+                document.getElementById('autoBackup').checked = settings.autoBackup !== false;
+                document.getElementById('autoRetry').checked = settings.autoRetry !== false;
+                document.getElementById('notifications').checked = settings.notifications !== false;
+            }
+        }
+        
+        function saveSettings() {
+            const settings = {
+                defaultDir: document.getElementById('defaultDir').value,
+                encoding: document.getElementById('encoding').value,
+                concurrentUploads: document.getElementById('concurrentUploads').value,
+                autoBackup: document.getElementById('autoBackup').checked,
+                autoRetry: document.getElementById('autoRetry').checked,
+                notifications: document.getElementById('notifications').checked
+            };
+            
+            localStorage.setItem('ftpSettings', JSON.stringify(settings));
+            showNotification('設定を保存しました', 'success');
+        }
+        
+        function exportSettings() {
+            const settings = {
+                profiles: profiles,
+                schedules: schedules,
+                settings: JSON.parse(localStorage.getItem('ftpSettings') || '{}'),
+                history: uploadHistory
+            };
+            
+            const blob = new Blob([JSON.stringify(settings, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ftp-settings-' + new Date().toISOString().split('T')[0] + '.json';
+            a.click();
+            
+            showNotification('設定をエクスポートしました', 'success');
+        }
+        
+        function importSettings() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        
+                        if (imported.profiles) {
+                            profiles = imported.profiles;
+                            localStorage.setItem('ftpProfiles', JSON.stringify(profiles));
+                        }
+                        
+                        if (imported.schedules) {
+                            schedules = imported.schedules;
+                            localStorage.setItem('schedules', JSON.stringify(schedules));
+                        }
+                        
+                        if (imported.settings) {
+                            localStorage.setItem('ftpSettings', JSON.stringify(imported.settings));
+                        }
+                        
+                        if (imported.history) {
+                            uploadHistory = imported.history;
+                            localStorage.setItem('uploadHistory', JSON.stringify(uploadHistory));
+                        }
+                        
+                        showNotification('設定をインポートしました', 'success');
+                        location.reload();
+                    } catch (error) {
+                        showNotification('インポート失敗: ' + error.message, 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+        
+        // Utility Functions
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / 1048576).toFixed(2) + ' MB';
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('ja-JP');
+        }
+        
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const icons = {
+                csv: '📊',
+                txt: '📄',
+                xml: '📋',
+                zip: '📦',
+                pdf: '📕',
+                doc: '📝',
+                xls: '📈',
+                jpg: '🖼️',
+                png: '🖼️',
+                gif: '🖼️'
+            };
+            return icons[ext] || '📄';
+        }
+        
+        function calculateNextRun(time, frequency) {
+            // 時刻が無効な場合はデフォルト値を使用
+            if (!time || !time.includes(':')) {
+                time = '09:00';
+            }
+            
+            const now = new Date();
+            const [hours, minutes] = time.split(':').map(Number);
+            const next = new Date();
+            next.setHours(hours, minutes, 0, 0);
+            
+            if (next <= now) {
+                if (frequency === 'daily') {
+                    next.setDate(next.getDate() + 1);
+                } else if (frequency === 'weekly') {
+                    next.setDate(next.getDate() + 7);
+                } else {
+                    next.setMonth(next.getMonth() + 1);
+                }
+            }
+            
+            return next.toISOString();
+        }
+        
+        function showNotification(message, type) {
+            // Browser notification
+            if (document.getElementById('notifications')?.checked && 
+                'Notification' in window && 
+                Notification.permission === 'granted') {
+                new Notification('楽天FTP Manager', {
+                    body: message,
+                    icon: '/favicon.ico'
+                });
+            }
+            
+            // In-app notification
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        function downloadFile(filename) {
+            showNotification(`ダウンロード: ${filename}`, 'info');
+        }
+        
+        // スケジュール自動実行機能
+        let scheduleCheckInterval = null;
+        
+        function checkAndExecuteSchedules() {
+            const schedules = JSON.parse(localStorage.getItem('schedules') || '[]');
+            const now = new Date();
+            
+            schedules.forEach(schedule => {
+                if (!schedule.active) return;
+                
+                const nextRun = new Date(schedule.nextRun);
+                if (nextRun <= now) {
+                    executeScheduledUpload(schedule);
+                    updateNextRunTime(schedule);
+                }
+            });
+        }
+        
+        function executeScheduledUpload(schedule) {
+            console.log(`スケジュール実行開始: ${schedule.name}`);
+            showNotification(`スケジュール「${schedule.name}」を実行中...`, 'info');
+            
+            // 接続プロファイルを取得
+            const profiles = JSON.parse(localStorage.getItem('ftpProfiles') || '[]');
+            if (profiles.length === 0) {
+                showNotification('接続プロファイルが設定されていません', 'error');
+                return;
+            }
+            
+            const profile = profiles[0]; // デフォルトプロファイルを使用
+            
+            // 自動接続を試行
+            connectToServer(profile).then(() => {
+                // スケジュールに登録されたファイルをアップロード
+                if (schedule.files && schedule.files.length > 0) {
+                    uploadScheduledFiles(schedule.files);
+                }
+                
+                // 実行履歴を記録
+                const history = {
+                    scheduleName: schedule.name,
+                    executedAt: new Date().toISOString(),
+                    status: 'success',
+                    filesUploaded: schedule.files ? schedule.files.length : 0
+                };
+                
+                let uploadHistory = JSON.parse(localStorage.getItem('uploadHistory') || '[]');
+                uploadHistory.unshift(history);
+                uploadHistory = uploadHistory.slice(0, 100); // 最新100件のみ保持
+                localStorage.setItem('uploadHistory', JSON.stringify(uploadHistory));
+                
+                showNotification(`スケジュール「${schedule.name}」を実行しました`, 'success');
+            }).catch(error => {
+                console.error('スケジュール実行エラー:', error);
+                showNotification(`スケジュール実行失敗: ${error.message}`, 'error');
+            });
+        }
+        
+        function connectToServer(profile) {
+            return new Promise((resolve, reject) => {
+                // Validate profile parameter
+                if (!profile || typeof profile !== 'object') {
+                    reject(new Error('Invalid profile parameter'));
+                    return;
+                }
+                
+                if (!profile.host) {
+                    reject(new Error('Profile missing host property'));
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('host', profile.host);
+                formData.append('port', profile.port);
+                formData.append('username', profile.username);
+                formData.append('password', profile.password);
+                
+                fetch('http://localhost:8080/api/test-connection', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        isConnected = true;
+                        document.getElementById('statusDot').style.background = '#28a745';
+                        document.getElementById('statusText').textContent = '接続済み';
+                        resolve();
+                    } else {
+                        reject(new Error(data.error || '接続失敗'));
+                    }
+                })
+                .catch(reject);
+            });
+        }
+        
+        function uploadScheduledFiles(files) {
+            // ファイルアップロード処理
+            files.forEach(file => {
+                console.log(`ファイルアップロード: ${file.name}`);
+                // 実際のアップロード処理をここに実装
+            });
+        }
+        
+        function updateNextRunTime(schedule) {
+            const now = new Date();
+            let nextRun;
+            
+            switch(schedule.type) {
+                case 'daily':
+                    nextRun = new Date(now);
+                    nextRun.setDate(nextRun.getDate() + 1);
+                    nextRun.setHours(...schedule.time.split(':').map(Number));
+                    nextRun.setSeconds(0);
+                    break;
+                    
+                case 'weekly':
+                    nextRun = calculateNextWeeklyRun(schedule.time, schedule.weekdays);
+                    break;
+                    
+                case 'monthly':
+                    nextRun = calculateNextMonthlyRun(schedule.time, schedule.monthlyDay);
+                    break;
+                    
+                default:
+                    return; // 一回のみの場合は更新しない
+            }
+            
+            schedule.nextRun = nextRun.toISOString();
+            
+            // スケジュールを更新して保存
+            const schedules = JSON.parse(localStorage.getItem('schedules') || '[]');
+            const index = schedules.findIndex(s => s.name === schedule.name);
+            if (index !== -1) {
+                schedules[index] = schedule;
+                localStorage.setItem('schedules', JSON.stringify(schedules));
+            }
+        }
+        
+        function startScheduleChecker() {
+            // 既存のインターバルをクリア
+            if (scheduleCheckInterval) {
+                clearInterval(scheduleCheckInterval);
+            }
+            
+            // 即座に一度チェック
+            checkAndExecuteSchedules();
+            
+            // 1分ごとにスケジュールをチェック
+            scheduleCheckInterval = setInterval(() => {
+                checkAndExecuteSchedules();
+            }, 60000); // 60秒 = 1分
+            
+            console.log('スケジュール自動実行を開始しました');
+            showNotification('スケジュール監視を開始しました', 'info');
+        }
+        
+        function stopScheduleChecker() {
+            if (scheduleCheckInterval) {
+                clearInterval(scheduleCheckInterval);
+                scheduleCheckInterval = null;
+                console.log('スケジュール自動実行を停止しました');
+                showNotification('スケジュール監視を停止しました', 'info');
+            }
+        }
+        
+        function toggleAutoExecution() {
+            const toggle = document.getElementById('autoExecuteToggle');
+            const statusText = document.getElementById('autoExecuteStatusText');
+            
+            if (toggle.checked) {
+                // 自動実行を開始
+                startScheduleChecker();
+                statusText.textContent = '✅ 自動実行が有効です（1分ごとにチェック）';
+                localStorage.setItem('autoExecuteEnabled', 'true');
+            } else {
+                // 自動実行を停止
+                stopScheduleChecker();
+                statusText.textContent = '⏸️ 自動実行は停止中です';
+                localStorage.setItem('autoExecuteEnabled', 'false');
+            }
+        }
+        
+        // ページ初期化処理
+        document.addEventListener('DOMContentLoaded', function() {
+            // 保存されたタブを復元
+            const savedTab = localStorage.getItem('currentTab');
+            if (savedTab) {
+                // 対応するタブボタンを探す
+                const tabButtons = document.querySelectorAll('.tab');
+                tabButtons.forEach(button => {
+                    const buttonText = button.textContent.trim();
+                    let tabName = '';
+                    
+                    // ボタンのテキストからタブ名を判定
+                    if (buttonText.includes('アップロード')) tabName = 'upload';
+                    else if (buttonText.includes('スケジュール')) tabName = 'schedule';
+                    else if (buttonText.includes('ファイル管理')) tabName = 'browse';
+                    else if (buttonText.includes('履歴')) tabName = 'history';
+                    else if (buttonText.includes('CSV')) tabName = 'csv';
+                    else if (buttonText.includes('設定')) tabName = 'settings';
+                    
+                    if (tabName === savedTab) {
+                        // すべてのタブとボタンから active クラスを削除
+                        document.querySelectorAll('.tab-content').forEach(tab => {
+                            tab.classList.remove('active');
+                        });
+                        document.querySelectorAll('.tab').forEach(btn => {
+                            btn.classList.remove('active');
+                        });
+                        
+                        // 保存されたタブをアクティブにする
+                        button.classList.add('active');
+                        const tabContent = document.getElementById(savedTab + 'Tab');
+                        if (tabContent) {
+                            tabContent.classList.add('active');
+                        }
+                        
+                        // タブ固有のデータを読み込む
+                        if (savedTab === 'history') {
+                            loadHistory();
+                        } else if (savedTab === 'schedule') {
+                            loadSchedules();
+                        }
+                    }
+                });
+            }
+            
+            // その他の初期化処理
+            loadProfiles();
+            
+            // プロファイルが読み込まれました（スケジュールタブのサーバー選択は、モーダル表示時に更新される）
+            
+            // loadTheme(); // テーマ機能は未実装
+            // loadSchedules(); // スケジュール機能は未実装
+            // loadHistory(); // 履歴機能は未実装
+            // loadSettings(); // 設定機能は未実装
+            
+            // 自動実行設定を復元
+            const autoExecuteEnabled = localStorage.getItem('autoExecuteEnabled');
+            const autoExecuteToggle = document.getElementById('autoExecuteToggle');
+            
+            if (autoExecuteEnabled === 'true') {
+                // 自動実行が有効な場合
+                if (autoExecuteToggle) {
+                    autoExecuteToggle.checked = true;
+                    document.getElementById('autoExecuteStatusText').textContent = '✅ 自動実行が有効です（1分ごとにチェック）';
+                }
+                startScheduleChecker();
+            } else {
+                // 自動実行が無効な場合
+                if (autoExecuteToggle) {
+                    autoExecuteToggle.checked = false;
+                    document.getElementById('autoExecuteStatusText').textContent = '⏸️ 自動実行は停止中です';
+                }
+            }
+            
+            // Chrome拡張エラーを抑制
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.onMessage.addListener(() => {});
+            }
+            
+            // console.errorをオーバーライド
+            const originalError = console.error;
+            console.error = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && 
+                    args[0].includes('Unchecked runtime.lastError')) {
+                    return;
+                }
+                originalError.apply(console, args);
+            };
+        });
+    </script>
+</body>
+</html>

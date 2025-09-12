@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  sftp-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.sftp
+    container_name: sftp-test-app
+    ports:
+      - "8098:8091"   # fixed: serve at http://localhost:8098/
+    volumes:
+      - ./data:/app/data
+      - ./test-uploads:/app/test-uploads
+      # Mount index-db.html as the root index
+      - ./index-db.html:/app/index.html:ro
+      # Mount helper script(s) referenced by index.html so the running container uses the latest
+      - ./ui-error-silencer.js:/app/ui-error-silencer.js:ro
+      # DB status page
+      - ./db-status.html:/app/db-status.html:ro
+      # index-db page
+      - ./index-db.html:/app/index-db.html:ro
+      - ./.env:/app/.env
+    environment:
+      - NODE_ENV=development
+      - PORT=8091
+    restart: unless-stopped
+    networks:
+      - sftp-network
+
+networks:
+  sftp-network:
+    driver: bridge

@@ -45,6 +45,7 @@ router.post('/',
     body('user').notEmpty().withMessage('User is required'),
     body('password').notEmpty().withMessage('Password is required'),
     body('port').optional().isInt({ min: 1, max: 65535 }),
+    body('protocol').optional().isString(),
     body('secure').optional().customSanitizer(value => {
       // Convert string "true"/"false" or "on"/"off" to boolean
       if (typeof value === 'string') {
@@ -61,7 +62,11 @@ router.post('/',
     }
 
     try {
-      const id = createFtpConnection(req.body);
+      const payload = { ...req.body };
+      if (!payload.protocol) {
+        payload.protocol = payload.secure ? 'ftps' : 'ftp';
+      }
+      const id = createFtpConnection(payload);
       const connection = getFtpConnection(Number(id));
       res.status(201).json(connection);
     } catch (error: any) {
@@ -86,6 +91,7 @@ router.put('/:id',
     body('user').optional().notEmpty(),
     body('password').optional().notEmpty(),
     body('port').optional().isInt({ min: 1, max: 65535 }),
+    body('protocol').optional().isString(),
     body('secure').optional().customSanitizer(value => {
       // Convert string "true"/"false" or "on"/"off" to boolean
       if (typeof value === 'string') {

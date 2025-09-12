@@ -51,6 +51,11 @@ export class SchedulerService {
 
   async createSchedule(schedule: any): Promise<void> {
     try {
+      // Respect is_active flag; do not schedule inactive entries
+      if (schedule.is_active === 0 || schedule.is_active === false) {
+        logger.info(`Skipping inactive schedule: ${schedule.name}`);
+        return;
+      }
       // Validate cron expression
       if (!cron.validate(schedule.cron_expression)) {
         logger.error(`Invalid cron expression for schedule ${schedule.name}: ${schedule.cron_expression}`);
@@ -85,13 +90,53 @@ export class SchedulerService {
       // Get FTP connection
       const ftpService = await this.ftpPool.getConnection(schedule.ftp_connection_id);
       
-      // Get CSV files from source directory
+      // Get CSV files from source directory  
       const baseDir = path.join(__dirname, '../../../data/uploads');
-      const sourceDir = schedule.source_directory === '.' ? baseDir : path.join(baseDir, schedule.source_directory);
-      const files = await this.getCSVFiles(sourceDir, schedule.file_pattern || '*.csv');
+      const sourceDir = schedule.source_directory === '.' || !schedule.source_directory ? baseDir : path.join(baseDir, schedule.source_directory);
+      
+      logger.info(`FIXED Debug - Base directory: ${baseDir}, Source directory setting: "${schedule.source_directory}", Final sourceDir: ${sourceDir}`);
+      // If specific files were selected, honor that list (may be JSON string in DB)
+      let files: string[] = [];
+      let selectedFiles: string[] | undefined;
+      if (schedule.selected_files) {
+        if (Array.isArray(schedule.selected_files)) {
+          selectedFiles = schedule.selected_files as string[];
+        } else if (typeof schedule.selected_files === 'string') {
+          try {
+            selectedFiles = JSON.parse(schedule.selected_files);
+          } catch {
+            selectedFiles = undefined;
+          }
+        }
+      }
+
+      // デバッグ用ログを追加
+      logger.info(`Debug - Schedule ${schedule.name}:`, {
+        sourceDir,
+        selectedFiles: selectedFiles || 'undefined',
+        selectedFilesLength: selectedFiles?.length || 0
+      });
+
+      if (selectedFiles && selectedFiles.length > 0) {
+        // Keep user-specified order; build absolute paths
+        const potentialFiles = selectedFiles.map((name: string) => {
+          const fullPath = path.join(sourceDir, name);
+          const exists = fs.existsSync(fullPath);
+          logger.info(`Debug - File check: ${fullPath} exists: ${exists}`);
+          return fullPath;
+        });
+        files = potentialFiles.filter((full) => fs.existsSync(full));
+      } else {
+        files = await this.getCSVFiles(sourceDir, schedule.file_pattern || '*.csv');
+        logger.info(`Debug - Found CSV files:`, files);
+      }
       
       if (files.length === 0) {
-        logger.info(`No files found for schedule ${schedule.name}`);
+        logger.info(`No files found for schedule ${schedule.name}`, {
+          sourceDir,
+          selectedFiles,
+          scheduleData: JSON.stringify(schedule, null, 2)
+        });
         return;
       }
 
@@ -111,6 +156,16 @@ export class SchedulerService {
       // Update last run time
       const stmt = db.prepare('UPDATE upload_schedules SET last_run = CURRENT_TIMESTAMP WHERE id = ?');
       stmt.run(schedule.id);
+
+      // If this schedule targets explicitly selected files (one-time), deactivate after first run
+      const isOneTime = (!schedule.file_pattern || schedule.file_pattern === null) && !!schedule.selected_files;
+      if (isOneTime) {
+        const deactivateStmt = db.prepare('UPDATE upload_schedules SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+        deactivateStmt.run(schedule.id);
+        // Also stop the in-memory cron job
+        await this.stopSchedule(schedule.id);
+        logger.info(`Deactivated one-time schedule: ${schedule.name}`);
+      }
 
       logger.info(`Completed schedule: ${schedule.name}`);
     } catch (error) {
@@ -201,7 +256,13 @@ export class SchedulerService {
   async updateSchedule(scheduleId: number, schedule: any): Promise<void> {
     // Stop existing schedule
     await this.stopSchedule(scheduleId);
-    
+
+    // Only (re)create if active
+    if (schedule.is_active === 0 || schedule.is_active === false) {
+      logger.info(`Schedule ${scheduleId} updated to inactive; not rescheduling.`);
+      return;
+    }
+
     // Create new schedule
     await this.createSchedule({ ...schedule, id: scheduleId });
   }

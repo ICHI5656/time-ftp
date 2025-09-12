@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>秋の大感謝セール - 最大50%OFF</title>
+    <style>
+        body {
+            font-family: 'メイリオ', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            padding: 40px 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #ff6b6b;
+            font-size: 36px;
+            margin: 0;
+        }
+        .countdown {
+            font-size: 24px;
+            color: #333;
+            margin: 20px 0;
+        }
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+        .badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .price {
+            font-size: 24px;
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        .old-price {
+            text-decoration: line-through;
+            color: #999;
+            margin-right: 10px;
+        }
+        .btn {
+            background: #feca57;
+            color: #333;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 15px;
+        }
+        .btn:hover {
+            background: #f9b826;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍂 秋の大感謝セール 🍂</h1>
+            <div class="countdown">
+                セール終了まで: <strong>3日 12時間 45分</strong>
+            </div>
+            <p style="font-size: 20px;">最大50%OFF + 送料無料</p>
+        </div>
+        
+        <div class="products">
+            <div class="product-card">
+                <div class="badge">50% OFF</div>
+                <h3>高級ノートパソコン Pro</h3>
+                <p>最新Intel Core i7搭載、16GB RAM、512GB SSD</p>
+                <div class="price">
+                    <span class="old-price">¥128,000</span>
+                    <span>¥64,000</span>
+                </div>
+                <button class="btn">今すぐ購入</button>
+            </div>
+            
+            <div class="product-card">
+                <div class="badge">30% OFF</div>
+                <h3>ゲーミングデスクトップ</h3>
+                <p>RTX 4070搭載、32GB RAM、1TB NVMe SSD</p>
+                <div class="price">
+                    <span class="old-price">¥198,000</span>
+                    <span>¥138,600</span>
+                </div>
+                <button class="btn">今すぐ購入</button>
+            </div>
+            
+            <div class="product-card">
+                <div class="badge">40% OFF</div>
+                <h3>10インチタブレット</h3>
+                <p>高解像度ディスプレイ、8時間バッテリー</p>
+                <div class="price">
+                    <span class="old-price">¥45,800</span>
+                    <span>¥27,480</span>
+                </div>
+                <button class="btn">今すぐ購入</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

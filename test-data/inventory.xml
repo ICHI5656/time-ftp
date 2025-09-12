@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inventory>
+    <lastUpdate>2025-09-09T00:00:00</lastUpdate>
+    <shop>
+        <shopName>テストショップ</shopName>
+        <shopId>SHOP001</shopId>
+    </shop>
+    <products>
+        <product>
+            <sku>SKU-001</sku>
+            <name>ワイヤレスマウス</name>
+            <category>PC周辺機器</category>
+            <price>3500</price>
+            <stock>
+                <quantity>150</quantity>
+                <status>在庫あり</status>
+                <warehouse>東京倉庫</warehouse>
+            </stock>
+            <attributes>
+                <color>ブラック</color>
+                <weight>85g</weight>
+                <connectivity>Bluetooth 5.0</connectivity>
+            </attributes>
+        </product>
+        <product>
+            <sku>SKU-002</sku>
+            <name>メカニカルキーボード</name>
+            <category>PC周辺機器</category>
+            <price>12800</price>
+            <stock>
+                <quantity>45</quantity>
+                <status>在庫あり</status>
+                <warehouse>大阪倉庫</warehouse>
+            </stock>
+            <attributes>
+                <color>ホワイト</color>
+                <switches>茶軸</switches>
+                <backlight>RGB</backlight>
+            </attributes>
+        </product>
+        <product>
+            <sku>SKU-003</sku>
+            <name>USBハブ 7ポート</name>
+            <category>PC周辺機器</category>
+            <price>4800</price>
+            <stock>
+                <quantity>0</quantity>
+                <status>在庫切れ</status>
+                <warehouse>東京倉庫</warehouse>
+                <nextArrival>2025-09-15</nextArrival>
+            </stock>
+            <attributes>
+                <ports>7</ports>
+                <usbVersion>3.0</usbVersion>
+                <powerSupply>外部電源付き</powerSupply>
+            </attributes>
+        </product>
+    </products>
+</inventory>

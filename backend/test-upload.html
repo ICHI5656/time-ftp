@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アップロードテスト - Time-FTP</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .upload-section { border: 1px solid #ddd; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 3px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        input, select { margin: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 3px; }
+        label { display: block; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Time-FTP アップロードテスト</h1>
+    
+    <div class="upload-section">
+        <h3>📋 プロファイル情報</h3>
+        <button onclick="loadProfiles()">プロファイル一覧を取得</button>
+        <div id="profilesList"></div>
+        
+        <label>選択プロファイル:</label>
+        <select id="profileSelect">
+            <option value="">プロファイルを選択してください</option>
+        </select>
+        
+        <label>アップロードディレクトリ:</label>
+        <input type="text" id="uploadDirectory" value="/" placeholder="アップロード先ディレクトリ">
+    </div>
+
+    <div class="upload-section">
+        <h3>📁 ファイルアップロード</h3>
+        <label>ファイル選択:</label>
+        <input type="file" id="fileInput" accept=".csv,.xml,.txt,.html,.zip">
+        
+        <br><br>
+        <button onclick="uploadFile()">アップロード実行</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let profiles = [];
+
+        async function loadProfiles() {
+            const resultDiv = document.getElementById('profilesList');
+            try {
+                const response = await fetch('/api/profiles');
+                const data = await response.json();
+                
+                if (data.success) {
+                    profiles = data.profiles;
+                    const select = document.getElementById('profileSelect');
+                    select.innerHTML = '<option value="">プロファイルを選択してください</option>';
+                    
+                    let html = '<h4>利用可能なプロファイル:</h4><ul>';
+                    data.profiles.forEach(profile => {
+                        html += `<li>ID: ${profile.id} - ${profile.name} (${profile.host}:${profile.port})</li>`;
+                        select.innerHTML += `<option value="${profile.id}">${profile.name} (${profile.host}:${profile.port})</option>`;
+                    });
+                    html += '</ul>';
+                    
+                    resultDiv.innerHTML = `<div class="success">${html}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">プロファイル取得エラー: ${data.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">通信エラー: ${error.message}</div>`;
+            }
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const profileSelect = document.getElementById('profileSelect');
+            const uploadDirectory = document.getElementById('uploadDirectory').value || '/';
+            const resultDiv = document.getElementById('result');
+
+            if (!fileInput.files.length) {
+                resultDiv.innerHTML = '<div class="error">ファイルを選択してください。</div>';
+                return;
+            }
+
+            if (!profileSelect.value) {
+                resultDiv.innerHTML = '<div class="error">プロファイルを選択してください。</div>';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('profile_id', profileSelect.value);
+            formData.append('uploadDirectory', uploadDirectory);
+
+            try {
+                resultDiv.innerHTML = '<div style="color: blue;">アップロード中...</div>';
+                
+                const response = await fetch('/api/upload-with-profile', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ アップロード成功</h4>
+                            <p><strong>メッセージ:</strong> ${data.message}</p>
+                            <p><strong>ファイル:</strong> ${data.details?.filename}</p>
+                            <p><strong>プロトコル:</strong> ${data.details?.protocol}</p>
+                            <p><strong>リモートパス:</strong> ${data.details?.remotePath}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ アップロード失敗</h4>
+                            <p><strong>エラー:</strong> ${data.message}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ 通信エラー</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // ページ読み込み時にプロファイルを取得
+        window.onload = function() {
+            loadProfiles();
+        };
+    </script>
+</body>
+</html>

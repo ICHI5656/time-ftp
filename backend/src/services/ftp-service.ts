@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { logger } from '../config/logger';
 import { getFtpConnection, addUploadHistory } from '../db/database';
+import { SftpService } from './sftp-service';
 
 interface FtpConfig {
   host: string;
@@ -19,6 +20,7 @@ export class FtpService {
   private connectionId: number;
 
   constructor() {
+    // Client will be initialized in connect() with correct timeout
     this.client = new ftp.Client();
     this.client.ftp.verbose = process.env.NODE_ENV === 'development';
   }
@@ -40,8 +42,10 @@ export class FtpService {
         timeout: parseInt(process.env.FTP_DEFAULT_TIMEOUT || '60000')
       };
 
-      // より安定した接続設定
-      this.client.timeout = this.config.timeout || 30000; // タイムアウトを短縮
+      // Initialize FTP client with timeout (Client constructor accepts timeout)
+      this.client.close();
+      this.client = new ftp.Client(this.config.timeout || 30000);
+      this.client.ftp.verbose = process.env.NODE_ENV === 'development';
       
       await this.client.access({
         host: this.config.host,
@@ -245,7 +249,7 @@ export class FtpService {
 // Singleton instance for connection pooling
 export class FtpConnectionPool {
   private static instance: FtpConnectionPool;
-  private connections: Map<number, FtpService> = new Map();
+  private connections: Map<number, FtpService | SftpService> = new Map();
 
   static getInstance(): FtpConnectionPool {
     if (!FtpConnectionPool.instance) {
@@ -254,11 +258,26 @@ export class FtpConnectionPool {
     return FtpConnectionPool.instance;
   }
 
-  async getConnection(connectionId: number): Promise<FtpService> {
+  async getConnection(connectionId: number): Promise<FtpService | SftpService> {
     if (!this.connections.has(connectionId)) {
-      const ftpService = new FtpService();
-      await ftpService.connect(connectionId);
-      this.connections.set(connectionId, ftpService);
+      // Get connection from database directly
+      const { db } = require('../db/database');
+      const conn = db.prepare('SELECT * FROM ftp_connections WHERE id = ? AND is_active = 1').get(connectionId) as any;
+      
+      if (!conn) {
+        throw new Error(`FTP connection not found: ${connectionId}`);
+      }
+      
+      const protocol = (conn?.protocol || (conn?.secure ? 'ftps' : 'ftp')) as string;
+      if (protocol === 'sftp') {
+        const s = new SftpService();
+        await s.connect(connectionId);
+        this.connections.set(connectionId, s);
+      } else {
+        const f = new FtpService();
+        await f.connect(connectionId);
+        this.connections.set(connectionId, f);
+      }
     }
     return this.connections.get(connectionId)!;
   }

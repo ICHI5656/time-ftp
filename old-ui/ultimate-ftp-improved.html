@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>楽天FTP Manager Pro - 改善版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #bf0000;
+            --secondary: #f5f5f5;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --dark: #333;
+            --light: #f8f9fa;
+            --border: #dee2e6;
+            --shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: -apple-system, 'Segoe UI', 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .status-bar {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            background: var(--light);
+            border-radius: 5px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+        
+        .status-dot.connected {
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .card-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #a00000;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: var(--secondary);
+            color: var(--dark);
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            margin: 20px 0;
+        }
+        
+        .file-upload-area:hover {
+            border-color: var(--primary);
+            background: #f8f9fa;
+        }
+        
+        .file-upload-area.dragover {
+            background: #e8f5e9;
+            border-color: var(--success);
+        }
+        
+        .file-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 10px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: var(--light);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .schedule-item {
+            background: var(--light);
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .tab-container {
+            margin-top: 20px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .tab-btn {
+            padding: 8px 16px;
+            background: var(--light);
+            border: none;
+            border-radius: 5px 5px 0 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            background: white;
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            background: white;
+            padding: 20px;
+            border-radius: 0 10px 10px 10px;
+        }
+        
+        .tab-panel {
+            display: none;
+        }
+        
+        .tab-panel.active {
+            display: block;
+        }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .spinner {
+            border: 3px solid var(--light);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .quick-action-btn {
+            padding: 15px;
+            text-align: center;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .quick-action-btn:hover {
+            background: var(--light);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">FTP</div>
+                <div>
+                    <h1 style="font-size: 20px;">楽天FTP Manager Pro</h1>
+                    <p style="font-size: 12px; color: #666;">改善版 v2.0</p>
+                </div>
+            </div>
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-dot" id="connectionStatus"></div>
+                    <span id="connectionText">未接続</span>
+                </div>
+                <div class="status-item">
+                    <span id="currentTime">--:--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">クイックアクション</div>
+            <div class="quick-actions">
+                <div class="quick-action-btn" onclick="quickConnect()">
+                    <div style="font-size: 24px;">🔌</div>
+                    <div style="font-size: 12px;">接続</div>
+                </div>
+                <div class="quick-action-btn" onclick="quickUpload()">
+                    <div style="font-size: 24px;">📤</div>
+                    <div style="font-size: 12px;">アップロード</div>
+                </div>
+                <div class="quick-action-btn" onclick="quickSchedule()">
+                    <div style="font-size: 24px;">⏰</div>
+                    <div style="font-size: 12px;">スケジュール</div>
+                </div>
+                <div class="quick-action-btn" onclick="quickHistory()">
+                    <div style="font-size: 24px;">📊</div>
+                    <div style="font-size: 12px;">履歴</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- FTP Connection -->
+            <div class="card">
+                <div class="card-header">
+                    FTP/SFTP接続設定
+                    <button class="btn btn-success btn-sm" onclick="loadSavedConnection()">保存済み</button>
+                </div>
+                
+                <div class="form-group">
+                    <label>接続タイプ</label>
+                    <select id="connectionType" onchange="updatePort()">
+                        <option value="sftp">SFTP (推奨)</option>
+                        <option value="ftp">FTP</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>ホスト名</label>
+                    <input type="text" id="host" placeholder="upload.rakuten.ne.jp" value="upload.rakuten.ne.jp">
+                </div>
+                
+                <div class="form-group">
+                    <label>ポート</label>
+                    <input type="number" id="port" value="22">
+                </div>
+                
+                <div class="form-group">
+                    <label>ユーザー名</label>
+                    <input type="text" id="username" placeholder="amicoco" value="amicoco">
+                </div>
+                
+                <div class="form-group">
+                    <label>パスワード</label>
+                    <input type="password" id="password" placeholder="パスワード">
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="testConnection()">接続テスト</button>
+                    <button class="btn btn-secondary" onclick="saveConnection()">設定保存</button>
+                </div>
+                
+                <div id="connectionResult" style="margin-top: 15px;"></div>
+            </div>
+
+            <!-- File Upload -->
+            <div class="card">
+                <div class="card-header">ファイルアップロード</div>
+                
+                <div class="file-upload-area" id="dropZone">
+                    <div style="font-size: 48px;">📁</div>
+                    <p>ファイルをドラッグ&ドロップ</p>
+                    <p style="font-size: 12px; color: #666;">またはクリックして選択</p>
+                    <input type="file" id="fileInput" multiple style="display: none;">
+                </div>
+                
+                <div class="form-group">
+                    <label>アップロード先ディレクトリ</label>
+                    <input type="text" id="uploadPath" placeholder="/cabinet/csv/" value="/cabinet/csv/">
+                </div>
+                
+                <div class="file-list" id="fileList">
+                    <p style="text-align: center; color: #999;">ファイルが選択されていません</p>
+                </div>
+                
+                <div class="progress-bar" style="display: none;" id="progressBar">
+                    <div class="progress-fill" id="progressFill">0%</div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="uploadFiles()">アップロード開始</button>
+                    <button class="btn btn-secondary" onclick="clearFiles()">クリア</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule Management -->
+        <div class="card">
+            <div class="card-header">
+                スケジュール管理
+                <button class="btn btn-primary btn-sm" onclick="addSchedule()">新規追加</button>
+            </div>
+            
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchTab('daily')">毎日</button>
+                    <button class="tab-btn" onclick="switchTab('weekly')">週次</button>
+                    <button class="tab-btn" onclick="switchTab('monthly')">月次</button>
+                    <button class="tab-btn" onclick="switchTab('once')">一回限り</button>
+                </div>
+                
+                <div class="tab-content">
+                    <div class="tab-panel active" id="daily">
+                        <div class="schedule-grid">
+                            <div class="schedule-item">
+                                <span>🕐 毎日 09:00</span>
+                                <button class="btn btn-danger btn-sm" onclick="removeSchedule(this)">削除</button>
+                            </div>
+                            <div class="schedule-item">
+                                <span>🕑 毎日 14:00</span>
+                                <button class="btn btn-danger btn-sm" onclick="removeSchedule(this)">削除</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-panel" id="weekly">
+                        <p style="text-align: center; color: #999;">週次スケジュールは設定されていません</p>
+                    </div>
+                    
+                    <div class="tab-panel" id="monthly">
+                        <p style="text-align: center; color: #999;">月次スケジュールは設定されていません</p>
+                    </div>
+                    
+                    <div class="tab-panel" id="once">
+                        <p style="text-align: center; color: #999;">一回限りのスケジュールは設定されていません</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History -->
+        <div class="card">
+            <div class="card-header">
+                アップロード履歴
+                <button class="btn btn-secondary btn-sm" onclick="refreshHistory()">更新</button>
+            </div>
+            
+            <div id="historyList">
+                <div class="alert alert-info">
+                    最近のアップロード履歴がここに表示されます
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">タイトル</h3>
+            <div id="modalBody">内容</div>
+            <div class="btn-group" style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="closeModal()">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:8080';
+        let selectedFiles = [];
+        let currentConnection = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            updateTime();
+            setInterval(updateTime, 1000);
+            loadSavedSettings();
+        });
+
+        function initializeApp() {
+            // Setup drag and drop
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            
+            dropZone.addEventListener('click', () => fileInput.click());
+            
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+            
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+        }
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = 
+                now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function updatePort() {
+            const type = document.getElementById('connectionType').value;
+            document.getElementById('port').value = type === 'sftp' ? '22' : '21';
+        }
+
+        async function testConnection() {
+            const button = event.target;
+            const originalText = button.textContent;
+            button.innerHTML = '<span class="spinner"></span> テスト中...';
+            button.disabled = true;
+            
+            const connectionData = {
+                type: document.getElementById('connectionType').value,
+                host: document.getElementById('host').value,
+                port: parseInt(document.getElementById('port').value),
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/test-connection`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(connectionData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showResult('success', '✅ 接続成功！');
+                    updateConnectionStatus(true);
+                    currentConnection = connectionData;
+                } else {
+                    showResult('danger', `❌ 接続失敗: ${result.error || 'Unknown error'}`);
+                    updateConnectionStatus(false);
+                }
+            } catch (error) {
+                showResult('danger', `❌ エラー: ${error.message}`);
+                updateConnectionStatus(false);
+            } finally {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+
+        function showResult(type, message) {
+            const resultDiv = document.getElementById('connectionResult');
+            resultDiv.className = `alert alert-${type}`;
+            resultDiv.textContent = message;
+            
+            setTimeout(() => {
+                resultDiv.style.opacity = '0';
+                setTimeout(() => {
+                    resultDiv.textContent = '';
+                    resultDiv.style.opacity = '1';
+                }, 300);
+            }, 5000);
+        }
+
+        function updateConnectionStatus(connected) {
+            const dot = document.getElementById('connectionStatus');
+            const text = document.getElementById('connectionText');
+            
+            if (connected) {
+                dot.classList.add('connected');
+                text.textContent = '接続済み';
+            } else {
+                dot.classList.remove('connected');
+                text.textContent = '未接続';
+            }
+        }
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files);
+            displayFiles();
+        }
+
+        function displayFiles() {
+            const fileList = document.getElementById('fileList');
+            
+            if (selectedFiles.length === 0) {
+                fileList.innerHTML = '<p style="text-align: center; color: #999;">ファイルが選択されていません</p>';
+                return;
+            }
+            
+            fileList.innerHTML = selectedFiles.map(file => `
+                <div class="file-item">
+                    <span>📄 ${file.name}</span>
+                    <span>${formatFileSize(file.size)}</span>
+                </div>
+            `).join('');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) {
+                alert('ファイルを選択してください');
+                return;
+            }
+            
+            if (!currentConnection) {
+                alert('先に接続テストを実行してください');
+                return;
+            }
+            
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            progressBar.style.display = 'block';
+            
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const progress = Math.round((i + 1) / selectedFiles.length * 100);
+                
+                progressFill.style.width = `${progress}%`;
+                progressFill.textContent = `${progress}% - ${file.name}`;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('path', document.getElementById('uploadPath').value);
+                formData.append('connection', JSON.stringify(currentConnection));
+                
+                try {
+                    await fetch(`${API_BASE}/api/upload`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                } catch (error) {
+                    console.error('Upload error:', error);
+                }
+            }
+            
+            progressFill.style.width = '100%';
+            progressFill.textContent = '完了！';
+            
+            setTimeout(() => {
+                progressBar.style.display = 'none';
+                clearFiles();
+                addToHistory();
+            }, 2000);
+        }
+
+        function clearFiles() {
+            selectedFiles = [];
+            document.getElementById('fileInput').value = '';
+            displayFiles();
+        }
+
+        function saveConnection() {
+            const connectionData = {
+                type: document.getElementById('connectionType').value,
+                host: document.getElementById('host').value,
+                port: document.getElementById('port').value,
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            };
+            
+            localStorage.setItem('ftpConnection', JSON.stringify(connectionData));
+            showResult('success', '✅ 設定を保存しました');
+        }
+
+        function loadSavedConnection() {
+            const saved = localStorage.getItem('ftpConnection');
+            if (saved) {
+                const data = JSON.parse(saved);
+                document.getElementById('connectionType').value = data.type || 'sftp';
+                document.getElementById('host').value = data.host || '';
+                document.getElementById('port').value = data.port || '22';
+                document.getElementById('username').value = data.username || '';
+                document.getElementById('password').value = data.password || '';
+                showResult('info', '保存済み設定を読み込みました');
+            }
+        }
+
+        function loadSavedSettings() {
+            loadSavedConnection();
+            loadHistory();
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function addSchedule() {
+            showModal('新規スケジュール', `
+                <div class="form-group">
+                    <label>タイプ</label>
+                    <select id="scheduleType">
+                        <option>毎日</option>
+                        <option>週次</option>
+                        <option>月次</option>
+                        <option>一回限り</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>時刻</label>
+                    <input type="time" id="scheduleTime">
+                </div>
+                <button class="btn btn-primary" onclick="saveSchedule()">保存</button>
+            `);
+        }
+
+        function removeSchedule(button) {
+            button.parentElement.remove();
+        }
+
+        function addToHistory() {
+            const history = JSON.parse(localStorage.getItem('uploadHistory') || '[]');
+            history.unshift({
+                date: new Date().toLocaleString('ja-JP'),
+                files: selectedFiles.map(f => f.name),
+                status: 'success'
+            });
+            
+            // Keep only last 10 items
+            if (history.length > 10) {
+                history.length = 10;
+            }
+            
+            localStorage.setItem('uploadHistory', JSON.stringify(history));
+            loadHistory();
+        }
+
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem('uploadHistory') || '[]');
+            const historyList = document.getElementById('historyList');
+            
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="alert alert-info">履歴がありません</div>';
+                return;
+            }
+            
+            historyList.innerHTML = history.map(item => `
+                <div class="file-item">
+                    <div>
+                        <strong>${item.date}</strong><br>
+                        <small>${item.files.join(', ')}</small>
+                    </div>
+                    <span class="btn btn-success btn-sm">成功</span>
+                </div>
+            `).join('');
+        }
+
+        function refreshHistory() {
+            loadHistory();
+            showResult('info', '履歴を更新しました');
+        }
+
+        function showModal(title, content) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').innerHTML = content;
+            document.getElementById('modal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+        }
+
+        // Quick Actions
+        function quickConnect() {
+            testConnection();
+        }
+
+        function quickUpload() {
+            document.getElementById('fileInput').click();
+        }
+
+        function quickSchedule() {
+            addSchedule();
+        }
+
+        function quickHistory() {
+            refreshHistory();
+        }
+    </script>
+</body>
+</html>

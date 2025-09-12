@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SFTP接続テスト - Rakuten Upload</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .readonly {
+            background-color: #f5f5f5;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-test {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-test:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-upload {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .btn-upload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(245, 87, 108, 0.4);
+        }
+        
+        .btn-save {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.4);
+        }
+        
+        .status {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .status h3 {
+            margin-bottom: 10px;
+        }
+        
+        .status pre {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .file-upload {
+            margin-top: 20px;
+            padding: 20px;
+            border: 2px dashed #e0e0e0;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+        
+        .file-upload.active {
+            display: block;
+        }
+        
+        .file-input {
+            margin-bottom: 10px;
+        }
+        
+        .info-box {
+            background: #f0f8ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .info-box h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .info-box ul {
+            margin-left: 20px;
+            color: #555;
+        }
+        
+        .info-box li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 SFTP接続テスト</h1>
+        
+        <div class="info-box">
+            <h4>設定情報</h4>
+            <ul>
+                <li>プロトコル: SFTP (SSH File Transfer Protocol)</li>
+                <li>ホスト: upload.rakuten.ne.jp</li>
+                <li>ポート: 22 (SFTP標準)</li>
+            </ul>
+        </div>
+        
+        <form id="sftpForm">
+            <div class="form-group">
+                <label for="protocol">プロトコル</label>
+                <select id="protocol" class="readonly" disabled>
+                    <option value="sftp" selected>SFTP - SSH File Transfer Protocol</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="host">ホスト (Host)</label>
+                <input type="text" id="host" value="upload.rakuten.ne.jp" class="readonly" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="port">ポート (Port)</label>
+                <input type="number" id="port" value="22" class="readonly" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="username">ユーザー名 (Username)</label>
+                <input type="text" id="username" value="amicoco" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">パスワード (Password)</label>
+                <input type="password" id="password" placeholder="パスワードを入力してください" required>
+            </div>
+            
+            <div class="button-group">
+                <button type="button" class="btn-test" onclick="testConnection()">
+                    接続テスト
+                </button>
+                <button type="button" class="btn-save" onclick="saveConfig()">
+                    設定保存
+                </button>
+                <button type="button" class="btn-upload" onclick="toggleUpload()">
+                    ファイルアップロード
+                </button>
+            </div>
+        </form>
+        
+        <div class="file-upload" id="uploadSection">
+            <h3>ファイルアップロード</h3>
+            <input type="file" id="fileInput" class="file-input">
+            <button type="button" class="btn-upload" onclick="uploadFile()">
+                選択したファイルをアップロード
+            </button>
+        </div>
+        
+        <div id="status" class="status"></div>
+    </div>
+    
+    <script>
+        // Load saved configuration
+        window.onload = function() {
+            const savedConfig = localStorage.getItem('sftpConfig');
+            if (savedConfig) {
+                const config = JSON.parse(savedConfig);
+                document.getElementById('username').value = config.username || 'amicoco';
+                if (config.password) {
+                    document.getElementById('password').value = config.password;
+                }
+            }
+        };
+        
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = message;
+        }
+        
+        async function testConnection() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const host = document.getElementById('host').value;
+            const port = document.getElementById('port').value;
+            
+            if (!username || !password) {
+                showStatus('ユーザー名とパスワードを入力してください', 'error');
+                return;
+            }
+            
+            showStatus(`
+                <h3>接続テスト中...</h3>
+                <pre>ホスト: ${host}
+ポート: ${port}
+ユーザー: ${username}
+プロトコル: SFTP</pre>
+                <p>接続を確立しています...</p>
+            `, 'info');
+            
+            try {
+                const response = await fetch('/api/test-connection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        host: host,
+                        port: port,
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus(`
+                        <h3>✅ ${result.message}</h3>
+                        <pre>ホスト: ${result.details.host}
+ポート: ${result.details.port}
+ユーザー: ${result.details.username}
+ファイル数: ${result.details.fileCount}</pre>
+                        <h4>ディレクトリ内容（最初の10件）:</h4>
+                        <pre>${result.details.files.map(f => `[${f.type}] ${f.name} ${f.type === 'file' ? '(' + f.size + ' bytes)' : ''}`).join('\n')}</pre>
+                    `, 'success');
+                } else {
+                    showStatus(`
+                        <h3>❌ ${result.message}</h3>
+                        <pre>エラー: ${result.error}
+ホスト: ${result.details.host}
+ポート: ${result.details.port}</pre>
+                    `, 'error');
+                }
+            } catch (error) {
+                showStatus(`
+                    <h3>❌ 接続エラー</h3>
+                    <pre>${error.message}</pre>
+                `, 'error');
+            }
+        }
+        
+        function saveConfig() {
+            const config = {
+                host: document.getElementById('host').value,
+                port: document.getElementById('port').value,
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            };
+            
+            localStorage.setItem('sftpConfig', JSON.stringify(config));
+            showStatus('設定が保存されました', 'success');
+        }
+        
+        function toggleUpload() {
+            const uploadSection = document.getElementById('uploadSection');
+            uploadSection.classList.toggle('active');
+        }
+        
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showStatus('ファイルを選択してください', 'error');
+                return;
+            }
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const host = document.getElementById('host').value;
+            const port = document.getElementById('port').value;
+            
+            if (!username || !password) {
+                showStatus('接続情報を入力してください', 'error');
+                return;
+            }
+            
+            showStatus(`
+                <h3>ファイルアップロード中...</h3>
+                <pre>ファイル名: ${file.name}
+サイズ: ${(file.size / 1024).toFixed(2)} KB
+タイプ: ${file.type || 'unknown'}</pre>
+                <p>アップロードを処理しています...</p>
+            `, 'info');
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('host', host);
+                formData.append('port', port);
+                formData.append('username', username);
+                formData.append('password', password);
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus(`
+                        <h3>✅ ${result.message}</h3>
+                        <pre>ファイル: ${result.details.filename}
+サイズ: ${result.details.size} bytes
+アップロード先: ${result.details.remotePath}
+検証: ${result.details.verified ? '成功' : '失敗'}</pre>
+                    `, 'success');
+                } else {
+                    showStatus(`
+                        <h3>❌ ${result.message}</h3>
+                        <pre>エラー: ${result.error}</pre>
+                    `, 'error');
+                }
+            } catch (error) {
+                showStatus(`
+                    <h3>❌ アップロードエラー</h3>
+                    <pre>${error.message}</pre>
+                `, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+FROM node:18-alpine
+
+# Install necessary packages
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    openssh-client
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install root dependencies (if any)
+RUN npm install || true
+
+# Copy application files
+COPY . .
+
+# Build backend (TypeScript)
+WORKDIR /app/backend
+RUN npm install && npm run build
+
+# Prepare runtime
+WORKDIR /app
+RUN mkdir -p /app/data /app/test-uploads
+
+# Expose application port
+EXPOSE 8091
+
+# Start backend API (serves /api and static UI)
+CMD ["node", "backend/dist/index.js"]

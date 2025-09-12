@@ -1,0 +1,13 @@
+{
+  "name": "org-auto-pr",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Org-wide auto-fix PR creator via GitHub App",
+  "scripts": {
+    "start": "node create-pr.mjs"
+  },
+  "dependencies": {
+    "octokit": "^4.0.0"
+  }
+}

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  sftp-test-server:
+    image: atmoz/sftp:alpine
+    container_name: sftp-test-server
+    ports:
+      - "2222:22"
+    volumes:
+      - ./test-uploads:/home/testuser/uploads
+    environment:
+      - SFTP_USERS=testuser:testpass:1001
+    command: testuser:testpass:1001
+    restart: unless-stopped
+
+networks:
+  default:
+    name: sftp-test-network

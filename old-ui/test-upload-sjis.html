@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>楽天CSV アップロードテスト（文字化け対策版）</title>
+    <style>
+        body {
+            font-family: 'メイリオ', sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #ff5252;
+            padding-bottom: 10px;
+        }
+        .upload-area {
+            border: 2px dashed #4CAF50;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            background: #fafafa;
+            transition: all 0.3s;
+            margin: 20px 0;
+        }
+        .upload-area.drag-over {
+            background: #e8f5e9;
+            border-color: #2e7d32;
+        }
+        .btn {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .btn:hover {
+            background: #45a049;
+        }
+        .btn-danger {
+            background: #f44336;
+        }
+        .btn-danger:hover {
+            background: #da190b;
+        }
+        .file-list {
+            margin: 20px 0;
+        }
+        .file-item {
+            background: #f9f9f9;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .result {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .encoding-info {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        select, input {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .server-config {
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗾 楽天CSV アップロードテスト（文字化け対策版）</h1>
+        
+        <div class="encoding-info">
+            ⚠️ <strong>重要</strong>: このツールは楽天CSVの文字化けを自動検出・修正します
+            <ul style="margin: 5px 0;">
+                <li>Shift-JIS → UTF-8 BOM 自動変換</li>
+                <li>Windows改行コード（CRLF）対応</li>
+                <li>日本語ファイル名の正しい処理</li>
+            </ul>
+        </div>
+
+        <div class="server-config">
+            <h3>📡 サーバー設定</h3>
+            <div class="grid">
+                <div>
+                    <label>プロトコル:</label>
+                    <select id="protocol" onchange="updatePort()">
+                        <option value="sftp">SFTP</option>
+                        <option value="ftp">FTP</option>
+                    </select>
+                </div>
+                <div>
+                    <label>ホスト:</label>
+                    <input type="text" id="host" value="test.rebex.net" placeholder="例: upload.rakuten.ne.jp">
+                </div>
+                <div>
+                    <label>ポート:</label>
+                    <input type="number" id="port" value="22">
+                </div>
+                <div>
+                    <label>ユーザー名:</label>
+                    <input type="text" id="username" value="demo" placeholder="ユーザー名">
+                </div>
+                <div>
+                    <label>パスワード:</label>
+                    <input type="password" id="password" value="password" placeholder="パスワード">
+                </div>
+                <div>
+                    <label>アップロード先:</label>
+                    <input type="text" id="uploadPath" value="/" placeholder="/">
+                </div>
+            </div>
+            <button class="btn" onclick="testConnection()">🔍 接続テスト</button>
+            <button class="btn" onclick="setTestFTP()">📁 FTPテストサーバー設定</button>
+            <button class="btn" onclick="setTestSFTP()">🔒 SFTPテストサーバー設定</button>
+        </div>
+
+        <div class="upload-area" id="dropZone">
+            <p style="font-size: 24px;">📂</p>
+            <p>ファイルをドラッグ＆ドロップ</p>
+            <p>または</p>
+            <input type="file" id="fileInput" multiple accept=".csv,.html,.xml,.txt" style="display: none;">
+            <button class="btn" onclick="document.getElementById('fileInput').click()">ファイルを選択</button>
+        </div>
+
+        <div id="fileList" class="file-list"></div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button class="btn" onclick="uploadFiles()">🚀 アップロード開始</button>
+            <button class="btn btn-danger" onclick="clearFiles()">🗑️ クリア</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+
+        // ドラッグ＆ドロップ設定
+        const dropZone = document.getElementById('dropZone');
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+        
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files);
+            displayFiles();
+        }
+
+        function displayFiles() {
+            const fileList = document.getElementById('fileList');
+            if (selectedFiles.length === 0) {
+                fileList.innerHTML = '';
+                return;
+            }
+            
+            fileList.innerHTML = '<h3>選択されたファイル:</h3>';
+            selectedFiles.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                
+                const encoding = detectEncoding(file.name);
+                item.innerHTML = `
+                    <div>
+                        ${getFileIcon(file.name)} ${file.name} 
+                        <span style="color: #666; font-size: 12px;">(${formatSize(file.size)})</span>
+                        <span style="color: #ff5722; font-size: 12px;">${encoding}</span>
+                    </div>
+                    <button onclick="removeFile(${index})" style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">削除</button>
+                `;
+                fileList.appendChild(item);
+            });
+        }
+
+        function detectEncoding(filename) {
+            if (filename.toLowerCase().includes('rakuten') || filename.toLowerCase().includes('rms')) {
+                return '[Shift-JIS想定]';
+            }
+            return '';
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const icons = {
+                'csv': '📊',
+                'html': '🌐',
+                'xml': '📄',
+                'txt': '📝'
+            };
+            return icons[ext] || '📎';
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            displayFiles();
+        }
+
+        function clearFiles() {
+            selectedFiles = [];
+            displayFiles();
+            document.getElementById('results').innerHTML = '';
+        }
+
+        function updatePort() {
+            const protocol = document.getElementById('protocol').value;
+            document.getElementById('port').value = protocol === 'ftp' ? '21' : '22';
+        }
+
+        function setTestFTP() {
+            document.getElementById('protocol').value = 'ftp';
+            document.getElementById('host').value = 'ftp.dlptest.com';
+            document.getElementById('port').value = '21';
+            document.getElementById('username').value = 'dlpuser';
+            document.getElementById('password').value = 'rNrKYTX9g7z3RgJRmxWuGHbeu';
+            showResult('FTPテストサーバー設定をセットしました', 'info');
+        }
+
+        function setTestSFTP() {
+            document.getElementById('protocol').value = 'sftp';
+            document.getElementById('host').value = 'test.rebex.net';
+            document.getElementById('port').value = '22';
+            document.getElementById('username').value = 'demo';
+            document.getElementById('password').value = 'password';
+            showResult('SFTPテストサーバー設定をセットしました（読み取り専用）', 'info');
+        }
+
+        async function testConnection() {
+            const config = getServerConfig();
+            
+            showResult('接続テスト中...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/test-connection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showResult(`✅ 接続成功！ファイル数: ${result.details.fileCount}`, 'success');
+                } else {
+                    showResult(`❌ 接続失敗: ${result.message} - ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ エラー: ${error.message}`, 'error');
+            }
+        }
+
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) {
+                showResult('ファイルを選択してください', 'error');
+                return;
+            }
+            
+            const config = getServerConfig();
+            const results = document.getElementById('results');
+            results.innerHTML = '';
+            
+            for (const file of selectedFiles) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                // サーバー設定を追加
+                Object.keys(config).forEach(key => {
+                    formData.append(key, config[key]);
+                });
+                
+                showResult(`📤 アップロード中: ${file.name}`, 'info');
+                
+                try {
+                    const response = await fetch('http://localhost:8080/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showResult(`✅ 成功: ${file.name} → ${result.details.remotePath}`, 'success');
+                    } else {
+                        showResult(`❌ 失敗: ${file.name} - ${result.message}`, 'error');
+                    }
+                } catch (error) {
+                    showResult(`❌ エラー: ${file.name} - ${error.message}`, 'error');
+                }
+            }
+        }
+
+        function getServerConfig() {
+            return {
+                protocol: document.getElementById('protocol').value,
+                host: document.getElementById('host').value,
+                port: parseInt(document.getElementById('port').value),
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                path: document.getElementById('uploadPath').value
+            };
+        }
+
+        function showResult(message, type) {
+            const results = document.getElementById('results');
+            const result = document.createElement('div');
+            result.className = `result ${type}`;
+            result.innerHTML = `${new Date().toLocaleTimeString('ja-JP')}: ${message}`;
+            results.appendChild(result);
+        }
+
+        // 初期設定
+        window.onload = () => {
+            setTestFTP();
+        };
+    </script>
+</body>
+</html>

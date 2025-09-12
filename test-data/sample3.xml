@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<products>
+    <product>
+        <id>001</id>
+        <name>ノートパソコン</name>
+        <price currency="JPY">98000</price>
+        <stock>25</stock>
+        <category>電子機器</category>
+        <description>高性能プロセッサ搭載の15インチノートパソコン</description>
+    </product>
+    <product>
+        <id>002</id>
+        <name>デスクトップPC</name>
+        <price currency="JPY">125000</price>
+        <stock>15</stock>
+        <category>電子機器</category>
+        <description>ゲーミング対応ハイスペックデスクトップ</description>
+    </product>
+    <product>
+        <id>003</id>
+        <name>タブレット</name>
+        <price currency="JPY">45000</price>
+        <stock>50</stock>
+        <category>電子機器</category>
+        <description>10インチ高解像度ディスプレイタブレット</description>
+    </product>
+</products>

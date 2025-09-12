@@ -1,0 +1,63 @@
+{
+  "testServers": [
+    {
+      "name": "公開FTPテストサーバー",
+      "protocol": "ftp",
+      "host": "ftp.dlptest.com",
+      "port": 21,
+      "username": "dlpuser",
+      "password": "rNrKYTX9g7z3RgJRmxWuGHbeu",
+      "secure": false,
+      "description": "公開テスト用FTPサーバー。アップロードしたファイルは定期的に削除されます。",
+      "supportedFileTypes": ["csv", "html", "xml", "txt", "zip"],
+      "defaultUploadDirectory": "/"
+    },
+    {
+      "name": "公開SFTPテストサーバー (Rebex)",
+      "protocol": "sftp",
+      "host": "test.rebex.net",
+      "port": 22,
+      "username": "demo",
+      "password": "password",
+      "secure": true,
+      "description": "Rebex提供の公開SFTPテストサーバー。読み取り専用。",
+      "supportedFileTypes": ["csv", "html", "xml", "txt"],
+      "defaultUploadDirectory": "/",
+      "note": "このサーバーは読み取り専用です。ファイル一覧の確認はできますが、アップロードはできません。"
+    },
+    {
+      "name": "楽天RMS（テスト用設定例）",
+      "protocol": "sftp",
+      "host": "upload.rakuten.ne.jp",
+      "port": 22,
+      "username": "your-username",
+      "password": "",
+      "secure": true,
+      "description": "楽天RMSのSFTPサーバー設定例。実際のユーザー名とパスワードを入力してください。",
+      "supportedFileTypes": ["csv"],
+      "defaultUploadDirectory": "/batch"
+    },
+    {
+      "name": "ローカルテストSFTP",
+      "protocol": "sftp", 
+      "host": "localhost",
+      "port": 2222,
+      "username": "testuser",
+      "password": "testpass",
+      "secure": true,
+      "description": "Docker環境でローカルに起動するテスト用SFTPサーバー",
+      "supportedFileTypes": ["csv", "html", "xml", "txt", "zip"],
+      "defaultUploadDirectory": "/uploads"
+    }
+  ],
+  "quickSetup": {
+    "instructions": "以下の手順でテストサーバーをセットアップできます：",
+    "steps": [
+      "1. 左サイドバーの「➕ 追加」ボタンをクリック",
+      "2. 上記のテストサーバー情報を入力",
+      "3. 「💾 保存」ボタンで保存",
+      "4. 「🔍 テスト」ボタンで接続確認",
+      "5. test-dataフォルダ内のファイルをアップロードしてテスト"
+    ]
+  }
+}

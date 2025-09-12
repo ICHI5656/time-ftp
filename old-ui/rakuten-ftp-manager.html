@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>楽天FTPマネージャー - Professional Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #bf0000;
+            --secondary: #f5f5f5;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --dark: #333;
+            --light: #f8f9fa;
+            --border: #dee2e6;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .logo-text h1 {
+            font-size: 24px;
+            color: var(--dark);
+            font-weight: 700;
+        }
+        
+        .logo-text p {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: var(--light);
+            border-radius: 25px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--danger);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.connected {
+            background: var(--success);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+        }
+        
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            height: fit-content;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .connection-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .form-group label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .form-group input {
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(191, 0, 0, 0.1);
+        }
+        
+        .form-group input[readonly] {
+            background: var(--light);
+            cursor: not-allowed;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #9f0000;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(191, 0, 0, 0.3);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .main-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 5px;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 30px;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .tab:hover {
+            color: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .upload-area {
+            border: 3px dashed var(--border);
+            border-radius: 15px;
+            padding: 60px 30px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: var(--light);
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: white;
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(191, 0, 0, 0.05);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        
+        .upload-text h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+        
+        .upload-text p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .file-list {
+            margin-top: 30px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: var(--light);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        
+        .file-item:hover {
+            background: white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .file-details h4 {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+        
+        .file-details p {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .action-upload {
+            background: var(--success);
+            color: white;
+        }
+        
+        .action-upload:hover {
+            background: #218838;
+        }
+        
+        .action-delete {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .action-delete:hover {
+            background: #c82333;
+        }
+        
+        .remote-files {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .remote-file {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .remote-file:hover {
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-3px);
+        }
+        
+        .remote-file-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        
+        .remote-file.folder .remote-file-icon {
+            color: var(--warning);
+        }
+        
+        .remote-file.file .remote-file-icon {
+            color: var(--primary);
+        }
+        
+        .remote-file h4 {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: var(--dark);
+            word-break: break-all;
+        }
+        
+        .remote-file p {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 25px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .stat-card h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .stat-change {
+            font-size: 12px;
+            color: var(--success);
+            margin-top: 5px;
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s;
+            z-index: 2000;
+        }
+        
+        .notification.success {
+            background: var(--success);
+        }
+        
+        .notification.error {
+            background: var(--danger);
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(400px); }
+            to { transform: translateX(0); }
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .remote-files {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">楽</div>
+                <div class="logo-text">
+                    <h1>楽天FTPマネージャー</h1>
+                    <p>Professional CSV Upload System</p>
+                </div>
+            </div>
+            <div class="connection-status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">未接続</span>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="dashboard">
+            <aside class="sidebar">
+                <h2>🔌 接続設定</h2>
+                <form class="connection-form" id="connectionForm">
+                    <div class="form-group">
+                        <label>プロトコル</label>
+                        <input type="text" value="SFTP" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>ホスト</label>
+                        <input type="text" id="host" value="upload.rakuten.ne.jp" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>ポート</label>
+                        <input type="number" id="port" value="22" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>ユーザー名</label>
+                        <input type="text" id="username" value="amicoco" required>
+                    </div>
+                    <div class="form-group">
+                        <label>パスワード</label>
+                        <input type="password" id="password" placeholder="••••••••" required>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="connectToServer()">
+                        <span id="connectBtnText">接続</span>
+                        <span id="connectLoader" class="loading" style="display: none;"></span>
+                    </button>
+                </form>
+                
+                <div style="margin-top: 30px; padding-top: 30px; border-top: 1px solid var(--border);">
+                    <h2>📊 統計情報</h2>
+                    <div class="stats-grid" style="grid-template-columns: 1fr;">
+                        <div class="stat-card">
+                            <h3>今日のアップロード</h3>
+                            <div class="stat-value" id="todayUploads">0</div>
+                            <div class="stat-change">+0% 前日比</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>総ファイル数</h3>
+                            <div class="stat-value" id="totalFiles">0</div>
+                            <div class="stat-change">サーバー上</div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+            
+            <main class="main-content">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('upload')">📤 アップロード</button>
+                    <button class="tab" onclick="switchTab('browse')">📁 ファイル管理</button>
+                    <button class="tab" onclick="switchTab('history')">📜 履歴</button>
+                    <button class="tab" onclick="switchTab('settings')">⚙️ 設定</button>
+                </div>
+                
+                <div id="uploadTab" class="tab-content active">
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click()" 
+                         ondrop="handleDrop(event)" 
+                         ondragover="handleDragOver(event)" 
+                         ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">
+                            <h3>ファイルをドラッグ＆ドロップ</h3>
+                            <p>または クリックしてファイルを選択</p>
+                            <p style="margin-top: 10px; font-size: 12px; color: #999;">
+                                対応形式: CSV, TXT, XML | 最大サイズ: 50MB
+                            </p>
+                        </div>
+                        <input type="file" id="fileInput" multiple accept=".csv,.txt,.xml" style="display: none;" onchange="handleFileSelect(event)">
+                    </div>
+                    
+                    <div class="file-list" id="fileList"></div>
+                </div>
+                
+                <div id="browseTab" class="tab-content">
+                    <h2 style="margin-bottom: 20px;">リモートファイル</h2>
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn btn-primary" onclick="refreshRemoteFiles()">
+                            🔄 更新
+                        </button>
+                    </div>
+                    <div class="remote-files" id="remoteFiles">
+                        <p style="grid-column: 1/-1; text-align: center; color: #666;">
+                            接続してファイルを表示
+                        </p>
+                    </div>
+                </div>
+                
+                <div id="historyTab" class="tab-content">
+                    <h2 style="margin-bottom: 20px;">アップロード履歴</h2>
+                    <div id="uploadHistory">
+                        <p style="text-align: center; color: #666; padding: 40px;">
+                            履歴はまだありません
+                        </p>
+                    </div>
+                </div>
+                
+                <div id="settingsTab" class="tab-content">
+                    <h2 style="margin-bottom: 20px;">設定</h2>
+                    <div style="max-width: 600px;">
+                        <div class="form-group">
+                            <label>デフォルトアップロードディレクトリ</label>
+                            <input type="text" value="/" placeholder="/uploads/">
+                        </div>
+                        <div class="form-group">
+                            <label>自動バックアップ</label>
+                            <select style="padding: 10px; border: 2px solid var(--border); border-radius: 8px;">
+                                <option>有効</option>
+                                <option>無効</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>ファイル名エンコーディング</label>
+                            <select style="padding: 10px; border: 2px solid var(--border); border-radius: 8px;">
+                                <option>UTF-8</option>
+                                <option>Shift-JIS</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-success" style="margin-top: 20px;">
+                            設定を保存
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        let isConnected = false;
+        let selectedFiles = [];
+        let uploadHistory = [];
+        let todayUploadCount = 0;
+        
+        // Load saved credentials
+        window.onload = function() {
+            const saved = localStorage.getItem('ftpCredentials');
+            if (saved) {
+                const creds = JSON.parse(saved);
+                document.getElementById('username').value = creds.username || 'amicoco';
+                document.getElementById('password').value = creds.password || '';
+            }
+            
+            // Load upload history
+            const history = localStorage.getItem('uploadHistory');
+            if (history) {
+                uploadHistory = JSON.parse(history);
+                updateHistoryDisplay();
+            }
+        };
+        
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+        
+        async function connectToServer() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showNotification('ユーザー名とパスワードを入力してください', 'error');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('connectBtnText').textContent = '接続中...';
+            document.getElementById('connectLoader').style.display = 'inline-block';
+            
+            try {
+                const response = await fetch('/api/test-connection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        host: document.getElementById('host').value,
+                        port: document.getElementById('port').value,
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    isConnected = true;
+                    updateConnectionStatus(true);
+                    showNotification('接続成功！', 'success');
+                    
+                    // Save credentials
+                    localStorage.setItem('ftpCredentials', JSON.stringify({
+                        username: username,
+                        password: password
+                    }));
+                    
+                    // Update stats
+                    document.getElementById('totalFiles').textContent = result.details.fileCount;
+                    
+                    // Load remote files
+                    refreshRemoteFiles();
+                } else {
+                    showNotification('接続失敗: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showNotification('接続エラー: ' + error.message, 'error');
+            } finally {
+                document.getElementById('connectBtnText').textContent = '接続';
+                document.getElementById('connectLoader').style.display = 'none';
+            }
+        }
+        
+        function updateConnectionStatus(connected) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            if (connected) {
+                statusDot.classList.add('connected');
+                statusText.textContent = '接続済み';
+            } else {
+                statusDot.classList.remove('connected');
+                statusText.textContent = '未接続';
+            }
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+        
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            
+            const files = Array.from(e.dataTransfer.files);
+            processFiles(files);
+        }
+        
+        function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            processFiles(files);
+        }
+        
+        function processFiles(files) {
+            files.forEach(file => {
+                if (!selectedFiles.find(f => f.name === file.name)) {
+                    selectedFiles.push(file);
+                }
+            });
+            updateFileList();
+        }
+        
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            
+            if (selectedFiles.length === 0) {
+                fileList.innerHTML = '';
+                return;
+            }
+            
+            fileList.innerHTML = '<h3 style="margin-bottom: 15px;">選択されたファイル</h3>';
+            
+            selectedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <div class="file-icon">📄</div>
+                        <div class="file-details">
+                            <h4>${file.name}</h4>
+                            <p>${(file.size / 1024).toFixed(2)} KB | ${file.type || 'unknown'}</p>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="action-btn action-upload" onclick="uploadFile(${index})">
+                            アップロード
+                        </button>
+                        <button class="action-btn action-delete" onclick="removeFile(${index})">
+                            削除
+                        </button>
+                    </div>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+        
+        async function uploadFile(index) {
+            if (!isConnected) {
+                showNotification('先に接続してください', 'error');
+                return;
+            }
+            
+            const file = selectedFiles[index];
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('host', document.getElementById('host').value);
+            formData.append('port', document.getElementById('port').value);
+            formData.append('username', document.getElementById('username').value);
+            formData.append('password', document.getElementById('password').value);
+            
+            try {
+                showNotification('アップロード中...', 'success');
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('アップロード成功！', 'success');
+                    
+                    // Add to history
+                    const historyItem = {
+                        filename: file.name,
+                        size: file.size,
+                        date: new Date().toISOString(),
+                        status: 'success'
+                    };
+                    uploadHistory.unshift(historyItem);
+                    localStorage.setItem('uploadHistory', JSON.stringify(uploadHistory.slice(0, 100)));
+                    updateHistoryDisplay();
+                    
+                    // Update stats
+                    todayUploadCount++;
+                    document.getElementById('todayUploads').textContent = todayUploadCount;
+                    
+                    // Remove from list
+                    removeFile(index);
+                    
+                    // Refresh remote files
+                    refreshRemoteFiles();
+                } else {
+                    showNotification('アップロード失敗: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showNotification('アップロードエラー: ' + error.message, 'error');
+            }
+        }
+        
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+        }
+        
+        async function refreshRemoteFiles() {
+            if (!isConnected) return;
+            
+            try {
+                const response = await fetch('/api/list-files', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        host: document.getElementById('host').value,
+                        port: document.getElementById('port').value,
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value,
+                        path: '/'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayRemoteFiles(result.files);
+                }
+            } catch (error) {
+                console.error('Failed to load remote files:', error);
+            }
+        }
+        
+        function displayRemoteFiles(files) {
+            const container = document.getElementById('remoteFiles');
+            container.innerHTML = '';
+            
+            files.forEach(file => {
+                const fileEl = document.createElement('div');
+                fileEl.className = `remote-file ${file.type}`;
+                fileEl.innerHTML = `
+                    <div class="remote-file-icon">${file.type === 'directory' ? '📁' : '📄'}</div>
+                    <h4>${file.name}</h4>
+                    <p>${file.type === 'file' ? formatFileSize(file.size) : 'フォルダ'}</p>
+                `;
+                container.appendChild(fileEl);
+            });
+        }
+        
+        function updateHistoryDisplay() {
+            const historyContainer = document.getElementById('uploadHistory');
+            
+            if (uploadHistory.length === 0) {
+                historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">履歴はまだありません</p>';
+                return;
+            }
+            
+            historyContainer.innerHTML = uploadHistory.map(item => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">📄</div>
+                        <div class="file-details">
+                            <h4>${item.filename}</h4>
+                            <p>${formatFileSize(item.size)} | ${new Date(item.date).toLocaleString('ja-JP')}</p>
+                        </div>
+                    </div>
+                    <div style="color: ${item.status === 'success' ? 'var(--success)' : 'var(--danger)'};">
+                        ${item.status === 'success' ? '✅ 成功' : '❌ 失敗'}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / 1048576).toFixed(2) + ' MB';
+        }
+        
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

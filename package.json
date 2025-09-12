@@ -1,0 +1,40 @@
+{
+  "name": "time-ftp",
+  "version": "1.0.0",
+  "description": "SFTP upload system for Rakuten",
+  "main": "sftp-server.js",
+  "scripts": {
+    "start": "node sftp-server.js",
+    "dev": "nodemon sftp-server.js",
+    "test": "node test-sftp-connection.js",
+    "docker:build": "docker build -f Dockerfile.sftp -t sftp-test .",
+    "docker:run": "docker run -p 8080:8080 --env-file .env sftp-test",
+    "docker:compose": "docker-compose -f docker-compose-sftp.yml up",
+    "docker:compose:build": "docker-compose -f docker-compose-sftp.yml up --build",
+    "docker:stop": "docker-compose -f docker-compose-sftp.yml down"
+  },
+  "dependencies": {
+    "basic-ftp": "^5.0.5",
+    "better-sqlite3": "^12.2.0",
+    "body-parser": "^1.20.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "iconv-lite": "^0.7.0",
+    "multer": "^1.4.5-lts.2",
+    "sqlite3": "^5.1.7",
+    "ssh2-sftp-client": "^10.0.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "nodemon": "^3.0.2",
+    "playwright": "^1.55.0"
+  },
+  "keywords": [
+    "sftp",
+    "upload",
+    "rakuten",
+    "ftp"
+  ],
+  "author": "",
+  "license": "ISC"
+}
