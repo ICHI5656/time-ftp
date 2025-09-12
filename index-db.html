@@ -358,6 +358,15 @@
         <!-- 履歴タブ -->
         <div id="history-tab" class="tab-content">
             <h2>アップロード履歴</h2>
+            <!-- デバッグ用ボタン（後で削除） -->
+            <div style="margin: 10px 0;">
+                <button onclick="addTestHistory()" style="background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                    テスト履歴を追加
+                </button>
+                <button onclick="clearHistory()" style="background: #dc3545; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">
+                    履歴をクリア
+                </button>
+            </div>
             <div id="history-list"></div>
         </div>
         
@@ -423,6 +432,32 @@
     </div>
     
     <script>
+        // グローバルエラーハンドラー - 拡張機能関連のエラーを無視
+        window.addEventListener('error', function(event) {
+            // Chrome拡張機能関連のエラーメッセージを無視
+            if (event.message && (
+                event.message.includes('Extension context invalidated') ||
+                event.message.includes('message channel closed') ||
+                event.message.includes('listener indicated an asynchronous response')
+            )) {
+                event.preventDefault();
+                return true;
+            }
+        });
+
+        // Promiseのrejectionハンドラー
+        window.addEventListener('unhandledrejection', function(event) {
+            // 拡張機能関連のエラーを無視
+            if (event.reason && event.reason.message && (
+                event.reason.message.includes('Extension context invalidated') ||
+                event.reason.message.includes('message channel closed') ||
+                event.reason.message.includes('listener indicated an asynchronous response')
+            )) {
+                event.preventDefault();
+                return true;
+            }
+        });
+
         // グローバル変数
         let profiles = [];
         let schedules = [];
@@ -488,14 +523,19 @@
             try {
                 const saved = localStorage.getItem('uploadHistory');
                 console.log('📚 履歴LocalStorageから読み込み:', saved ? saved.length + 'bytes' : 'null');
-                if (saved) {
-                    const history = JSON.parse(saved);
-                    console.log('✅ 履歴読み込み成功:', history.length + '件');
-                    updateHistoryList(history);
-                } else {
-                    console.log('⚠️ 履歴なし');
+                
+                // デバッグ用：LocalStorageの内容を確認
+                if (!saved) {
+                    console.log('⚠️ uploadHistoryキーが存在しません');
+                    console.log('📦 LocalStorageのすべてのキー:', Object.keys(localStorage));
                     updateHistoryList([]);
+                    return;
                 }
+                
+                const history = JSON.parse(saved);
+                console.log('✅ 履歴読み込み成功:', history.length + '件');
+                console.log('📋 履歴データサンプル:', history.slice(0, 3)); // 最初の3件を表示
+                updateHistoryList(history);
             } catch (error) {
                 console.error('履歴読み込みエラー:', error);
                 updateHistoryList([]);
@@ -635,32 +675,65 @@
         // 履歴リスト更新
         function updateHistoryList(history) {
             const list = document.getElementById('history-list');
-            console.log('📜 履歴リスト更新:', history.length + '件', history);
+            console.log('📜 履歴リスト更新:', history ? history.length + '件' : '0件', history);
             
             if (!list) {
                 console.error('❌ history-list要素が見つかりません');
                 return;
             }
             
+            // リストをクリア
             list.innerHTML = '';
             
-            if (history.length === 0) {
+            // 履歴がない場合
+            if (!history || history.length === 0) {
                 list.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">アップロード履歴がありません</div>';
                 return;
             }
             
-            history.forEach(entry => {
+            // 履歴を新しい順に並べ替え
+            const sortedHistory = [...history].sort((a, b) => {
+                return new Date(b.uploaded_at) - new Date(a.uploaded_at);
+            });
+            
+            // 履歴アイテムを作成
+            sortedHistory.forEach((entry, index) => {
                 const item = document.createElement('div');
                 item.className = 'history-item';
-                const statusIcon = entry.status === 'success' ? '✅' : '❌';
+                
+                // ステータスアイコンと色の設定
+                const statusIcon = (entry.status === 'success' || entry.status === 'completed') ? '✅' : '❌';
+                const statusColor = (entry.status === 'success' || entry.status === 'completed') ? '#28a745' : '#dc3545';
+                const statusText = (entry.status === 'success' || entry.status === 'completed') ? '成功' : '失敗';
+                
+                // ファイルサイズの表示
+                const fileSize = entry.file_size ? `${(entry.file_size / 1024).toFixed(2)} KB` : '';
+                
+                // 実行時間の表示
+                const duration = entry.duration_ms ? `${entry.duration_ms}ms` : '';
+                
+                // スケジュール実行フラグ
+                const scheduleFlag = entry.schedule_executed ? '📅 ' : '';
+                
                 item.innerHTML = `
-                    <div>
-                        ${statusIcon} <strong>${entry.file_name}</strong><br>
-                        ${entry.profile_name} - ${entry.upload_path}<br>
-                        ${new Date(entry.uploaded_at).toLocaleString()}<br>
-                        ${entry.error_message ? `エラー: ${entry.error_message}` : `成功 (${entry.duration_ms}ms)`}
+                    <div style="padding: 10px; border-left: 3px solid ${statusColor};">
+                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                            ${statusIcon} 
+                            <strong style="margin-left: 5px;">${scheduleFlag}${entry.file_name || 'Unknown'}</strong>
+                        </div>
+                        <div style="color: #666; font-size: 12px;">
+                            <div>${entry.profile_name || 'Unknown'} - ${entry.upload_path || '/'}</div>
+                            <div>${new Date(entry.uploaded_at).toLocaleString('ja-JP')}</div>
+                            <div>
+                                ${statusText}
+                                ${fileSize ? ` • ${fileSize}` : ''}
+                                ${duration ? ` • ${duration}` : ''}
+                            </div>
+                            ${entry.error_message ? `<div style="color: #dc3545;">エラー: ${entry.error_message}</div>` : ''}
+                        </div>
                     </div>
                 `;
+                
                 list.appendChild(item);
             });
         }
@@ -969,7 +1042,7 @@
             
             try {
                 // プロファイル情報を取得
-                const profiles = JSON.parse(localStorage.getItem('ftpProfiles') || '[]');
+                const profiles = JSON.parse(localStorage.getItem('profiles') || '[]');
                 const profile = profiles.find(p => p.id === schedule.profile_id);
                 if (!profile) {
                     console.error('❌ プロファイルが見つかりません:', schedule.profile_id);
@@ -1212,8 +1285,9 @@
                     await loadStats();
                 }
                 
-                // 履歴を更新
+                // 履歴と統計を更新
                 await loadHistory();
+                await loadStats();
                 
             } catch (error) {
                 console.error('❌ スケジュール実行エラー:', error);
@@ -1404,6 +1478,8 @@
         
         // UI関数
         function switchTab(tabName, element) {
+            console.log('📑 タブ切り替え:', tabName);
+            
             // Remove active from all tabs and content
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -1420,6 +1496,26 @@
             const targetContent = document.getElementById(`${tabName}-tab`);
             if (targetContent) {
                 targetContent.classList.add('active');
+            }
+            
+            // タブごとにデータを読み込む
+            switch(tabName) {
+                case 'history':
+                    console.log('📜 履歴タブを開きました');
+                    loadHistory();
+                    break;
+                case 'stats':
+                    console.log('📊 統計タブを開きました');
+                    loadStats();
+                    break;
+                case 'profiles':
+                    console.log('👤 プロファイルタブを開きました');
+                    loadProfiles();
+                    break;
+                case 'schedule':
+                    console.log('📅 スケジュールタブを開きました');
+                    loadSchedules();
+                    break;
             }
         }
         
@@ -2875,8 +2971,9 @@
                             updateScheduleInStorage(schedule);
                         }
                         
-                        // スケジュールリストを更新
+                        // スケジュールリストと履歴を更新
                         await loadSchedules();
+                        await loadHistory();
                     }
                 } else {
                     // schedule_timeがない場合は即座に実行（後方互換性）
@@ -2929,6 +3026,38 @@
         });
         
         // ページを離れる時にインターバルをクリア
+        // テスト履歴追加関数（デバッグ用）
+        function addTestHistory() {
+            const existingHistory = JSON.parse(localStorage.getItem('uploadHistory') || '[]');
+            const newEntry = {
+                id: Date.now().toString(),
+                file_name: `test_${Date.now()}.csv`,
+                profile_name: "Test Server",
+                upload_path: "/test/directory",
+                uploaded_at: new Date().toISOString(),
+                status: Math.random() > 0.5 ? "success" : "failed",
+                file_size: Math.floor(Math.random() * 10000) + 1000,
+                duration_ms: Math.floor(Math.random() * 5000) + 100,
+                protocol: "sftp",
+                error_message: Math.random() > 0.5 ? null : "Test error message"
+            };
+            existingHistory.unshift(newEntry);
+            localStorage.setItem('uploadHistory', JSON.stringify(existingHistory));
+            console.log('✅ テスト履歴を追加しました:', newEntry);
+            loadHistory();
+            showToast('テスト履歴を追加しました', 'success');
+        }
+        
+        // 履歴クリア関数（デバッグ用）
+        function clearHistory() {
+            if (confirm('本当に履歴をクリアしますか？')) {
+                localStorage.removeItem('uploadHistory');
+                console.log('🗑️ 履歴をクリアしました');
+                loadHistory();
+                showToast('履歴をクリアしました', 'info');
+            }
+        }
+        
         window.addEventListener('beforeunload', () => {
             if (scheduleCheckInterval) {
                 clearInterval(scheduleCheckInterval);
