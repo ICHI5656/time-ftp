@@ -1043,9 +1043,14 @@
             try {
                 // プロファイル情報を取得
                 const profiles = JSON.parse(localStorage.getItem('profiles') || '[]');
-                const profile = profiles.find(p => p.id === schedule.profile_id);
+                console.log('📊 デバッグ: 利用可能なプロファイル:', profiles);
+                console.log('🔍 デバッグ: 探しているプロファイルID:', schedule.profile_id);
+                console.log('📋 デバッグ: スケジュール全体:', schedule);
+                
+                const profile = profiles.find(p => p.id === schedule.profile_id || p.id === String(schedule.profile_id));
                 if (!profile) {
                     console.error('❌ プロファイルが見つかりません:', schedule.profile_id);
+                    console.error('利用可能なプロファイルID:', profiles.map(p => p.id));
                     if (window.showToast) {
                         window.showToast('プロファイルが見つかりません', 'error');
                     }
